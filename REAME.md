@@ -1,0 +1,1 @@
+supports code128 and datamtrix

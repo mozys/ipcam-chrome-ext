@@ -17,8 +17,10 @@ const saveOptions = () => {
 }
 
 const restoreOptions = () => {
+  console.log('restoreOptions')
   chrome.storage.sync.get(['barcodeType'],
     (items) => {
+      console.log(items)
       document.getElementById('barcode-type').value = items.barcodeType || 'datamatrix';
     }
   );

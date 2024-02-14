@@ -11,6 +11,7 @@ setTimeout(async () => {
         console.log('S/N:', serialNo)
 
         const options = await chrome.storage.sync.get()
+        const barcodeType = options.barcodeType || 'datamatrix'
         let hScale = 1
         if (options.barcodeType === 'code128') {
             hScale = 0.2
@@ -26,7 +27,7 @@ setTimeout(async () => {
             const styleElem = document.head.appendChild(document.createElement("style"));
             styleElem.innerHTML = `#barcode-wrapper { position: absolute; bottom: 30px; background: yellow; padding: 0.875rem; } #barcode-wrapper img { width: ${width}px; height: ${height}px; }`
         }
-        img.src = `http://bwipjs-api.metafloor.com/?bcid=${options.barcodeType}&text=${serialNo}`
+        img.src = `http://bwipjs-api.metafloor.com/?bcid=${barcodeType}&text=${serialNo}`
         
         imageWrapper.appendChild(img)
         footer.appendChild(imageWrapper)

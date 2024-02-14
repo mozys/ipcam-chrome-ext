@@ -17,10 +17,9 @@ const saveOptions = () => {
 }
 
 const restoreOptions = () => {
-  chrome.storage.sync.get(
-    { barcodeType: 'datamatrix' },
+  chrome.storage.sync.get(['barcodeType'],
     (items) => {
-      document.getElementById('barcode-type').value = items.barcodeType;
+      document.getElementById('barcode-type').value = items.barcodeType || 'datamatrix';
     }
   );
 };

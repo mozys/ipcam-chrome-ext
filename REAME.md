@@ -1,1 +1,1 @@
-supports code128 and datamtrix
+supports code128 and datamatrix

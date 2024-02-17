@@ -97,7 +97,7 @@ const redesignBisPage = async () => {
 }
 
 const injectBarcode = async () => {
-    const serialNo = getSerioalNo() || '0123456789'
+    const serialNo = getSerioalNo()
     if (!serialNo) {
         return
     }

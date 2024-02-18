@@ -47,6 +47,25 @@ const redesignBisPage = async () => {
     const _ul = document.createElement('ul')
     _ul.classList.add('list-group', 'mb-3')
 
+    const idleCurrentInput = document.querySelectorAll('.txt-in')[1]
+    idleCurrentInput.addEventListener('keydown', (e) => {
+        console.log(e.key)
+        const isSpecialKey = e.key.length > 1
+        console.log({ isSpecialKey })
+        if (isSpecialKey) {
+            return
+        }
+
+        const isFirstDigit = idleCurrentInput.value.length === 0
+        const isZero = (/0/).test(e.key)
+        const isNumber = (/\d/).test(e.key)
+        console.log({ isNumber, isZero, isFirstDigit })
+        if (!isNumber || (isFirstDigit && isZero)) {
+            console.log('bad input')
+            return e.preventDefault()
+        }
+    })
+
     if (isOfflineMode) {
         const badge = document.createElement('span')
         badge.classList.add('badge', 'badge-light', 'text-muted')

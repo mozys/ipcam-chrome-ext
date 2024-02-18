@@ -1,3 +1,7 @@
+## [2.1] - 2024-02-18
+### Changed
+- Enforce integer values for form field `idle current`
+
 ## [2.0] - 2024-02-17
 ### Added
 - Rearranged test order for test duration minimization

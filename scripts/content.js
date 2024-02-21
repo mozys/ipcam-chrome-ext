@@ -5,12 +5,12 @@ const getBisForm = () => {
     }
 
     const bisConfig = [
+        { groupNo: 3, groupTag: 'hardware', itemNo: 1, listIndex: 6 },
         { groupNo: 3, groupTag: 'hardware', itemNo: 6, listIndex: 11 },
-        { groupNo: 2, groupTag: 'focus', itemNo: 1, listIndex: 3 },
+        { groupNo: 2, groupTag: 'focus', itemNo: 1, listIndex: 3, disabled: true },
         { groupNo: 1, groupTag: 'backend', itemNo: 1, listIndex: 0, disabled: true },
         { groupNo: 1, groupTag: 'backend', itemNo: 2, listIndex: 1, disabled: true },
         { groupNo: 1, groupTag: 'backend', itemNo: 3, listIndex: 2 },
-        { groupNo: 3, groupTag: 'hardware', itemNo: 1, listIndex: 6 },
         { groupNo: 2, groupTag: 'focus', itemNo: 2, listIndex: 4 },
         { groupNo: 2, groupTag: 'focus', itemNo: 3, listIndex: 5 },
         { groupNo: 3, groupTag: 'hardware', itemNo: 2, listIndex: 7 },

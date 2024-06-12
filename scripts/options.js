@@ -6,8 +6,11 @@ const saveOptions = () => {
   const setupMode = document.getElementById('setup-mode').value
   console.log(setupMode)
 
+  const lensType = document.getElementById('lens-type').value
+  console.log(lensType)
+
   chrome.storage.sync.set(
-    { barcodeType, setupMode},
+    { barcodeType, setupMode, lensType },
     () => {
       // Update status to let user know options were saved.
       const status = document.getElementById('status');
@@ -21,11 +24,12 @@ const saveOptions = () => {
 
 const restoreOptions = () => {
   console.log('restoreOptions')
-  chrome.storage.sync.get(['barcodeType', 'setupMode'],
+  chrome.storage.sync.get(['barcodeType', 'setupMode', 'lensType'],
     (items) => {
       console.log(items)
       document.getElementById('barcode-type').value = items.barcodeType || 'datamatrix';
       document.getElementById('setup-mode').value = items.setupMode || 'offline';
+      document.getElementById('lens-type').value = items.lensType || 'standard';
     }
   );
 };
@@ -33,3 +37,4 @@ const restoreOptions = () => {
 document.addEventListener('DOMContentLoaded', restoreOptions);
 document.getElementById('barcode-type').addEventListener('change', saveOptions)
 document.getElementById('setup-mode').addEventListener('change', saveOptions)
+document.getElementById('lens-type').addEventListener('change', saveOptions)

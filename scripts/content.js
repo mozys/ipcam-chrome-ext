@@ -1,3 +1,7 @@
+const optionsPage = `chrome://extensions/?options=${chrome.runtime.id}`
+const labelPrintServiceBaseURL = 'http://192.168.1.90:8020'
+let brand = ''
+
 const getBisForm = () => {
     const formElement = document.querySelector('div.bis .test-form')
     if (!formElement) {
@@ -22,6 +26,15 @@ const getBisForm = () => {
     return { formElement, bisConfig }
 }
 
+const setBrand = () => {
+    const productName = document.querySelectorAll('.h2')[1].innerHTML
+    if (productName.startsWith('LCAM')) {
+        brand = 'LZ'
+    } else if (productName.startsWith('Event')) {
+        brand = 'PF'
+    }
+}
+
 const getSerioalNo = () => {
     const _el = document.querySelector('div.system-versionbar ul li > small:nth-child(2)')
     if (!_el) {
@@ -37,6 +50,7 @@ const bisConfig = _bisForm?.bisConfig
 
 const redesignBisPage = async () => {
     const options = await chrome.storage.sync.get()
+    console.log(options)
     const setupMode = options.setupMode || 'offline'
     const isOfflineMode = setupMode === 'offline'
 
@@ -113,6 +127,32 @@ const redesignBisPage = async () => {
 
     const _cards = document.querySelectorAll('div.card')
     _cards.forEach(_card => _card.remove())
+
+
+    const optionsList = document.createElement('div')
+    optionsList.style.position = 'absolute'
+    optionsList.style.top = '1rem'
+    optionsList.style.left = '1rem'
+    optionsList.style.border = '1px solid lightgray'
+    optionsList.style.borderRadius = '0.25rem'
+    optionsList.style.padding = '1rem'
+
+    document.body.append(optionsList)
+    for (key in options) {
+        const _keyEl = document.createElement('small')
+        _keyEl.innerHTML = key
+        _keyEl.style.display = 'block'
+        optionsList.append(_keyEl)
+
+        const _valueEl = document.createElement('strong')
+        _valueEl.innerHTML = options[key]
+        _valueEl.style.display = 'block'
+        _valueEl.style.marginBottom = '1rem'
+        if (key === 'lensType') {
+            _valueEl.style.backgroundColor = 'yellow'
+        }
+        optionsList.append(_valueEl)
+    }
 }
 
 const injectBarcode = async () => {
@@ -132,6 +172,51 @@ const injectBarcode = async () => {
     
     const imageWrapper = document.createElement('div')
     imageWrapper.id = 'barcode-wrapper'
+    imageWrapper.style.cursor = 'pointer'
+    imageWrapper.addEventListener('click', async () => {
+        const id = serialNo
+        const lensType = options.lensType
+
+        let deviceType = ''
+        switch (`${brand}.${lensType}`) {
+            case 'PF.standard':
+                deviceType = 'voc10'
+                break
+            case 'PF.weitwinkel':
+                deviceType = 'voc5'
+                break
+            case 'LZ.standard':
+                deviceType = 'lcamf'
+                break
+            case 'LZ.weitwinkel':
+                deviceType = 'lcamw'
+                break
+        }
+
+        let labelData
+        try {
+            res = await fetch(`${labelPrintServiceBaseURL}/api/ipcams/${id}/data`)
+            labelData = await res.json()
+        } catch (err) {
+            alert('could not fetch label data')
+            return
+        }
+
+        try {
+            await fetch(`${labelPrintServiceBaseURL}/api/labels/print`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ deviceType, data: labelData, description: `${deviceType}#${id}` }),
+            })
+
+        } catch (err) {
+            alert('could not print label')
+            return
+        }
+
+    })
 
     const canvas = document.createElement('canvas')
     const img = new Image()
@@ -154,6 +239,7 @@ const injectBarcode = async () => {
 }
 
 if (formElement) {
+    setBrand()
     redesignBisPage()
     setTimeout(injectBarcode, 1000)
 }

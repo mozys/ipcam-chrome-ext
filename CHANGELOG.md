@@ -1,3 +1,10 @@
+## [2.3] - 2024-06-12
+### Added
+- Label print action
+- Lens type option
+- Brand detection
+- Options list
+
 ## [2.2] - 2024-02-21
 ### Changed
 - Move test `3.1 power led` to position 1

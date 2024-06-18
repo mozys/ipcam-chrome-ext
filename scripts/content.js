@@ -238,8 +238,30 @@ const injectBarcode = async () => {
     footer.appendChild(imageWrapper)
 }
 
+const observeActivation = () => {
+    const targetNode = document.getElementById('main')
+    const config = { childList: true, subtree: true }
+
+    const callback = (mutationList, observer) => {
+        console.log('mutation observed')
+        for (const mutation of mutationList) {
+            const modalHeader = document.querySelector('.modal-title')
+            if (modalHeader && (modalHeader.textContent === 'Activation and transmission successful!')) {
+                const barcodeWrapper = document.getElementById('barcode-wrapper')
+                barcodeWrapper.style.background = 'lime'                
+                observer.disconnect()
+                break
+            }
+        }
+    }
+
+    const observer = new MutationObserver(callback);
+    observer.observe(targetNode, config);
+}
+
 if (formElement) {
     setBrand()
     redesignBisPage()
+    observeActivation()
     setTimeout(injectBarcode, 1000)
 }

@@ -1,3 +1,7 @@
+## [2.4] - 2024-06-18
+### Added
+- Barcode background color turns green on successful activation
+
 ## [2.3] - 2024-06-12
 ### Added
 - Label print action

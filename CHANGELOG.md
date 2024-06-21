@@ -1,3 +1,7 @@
+## [2.6] - 2024-06-21
+### Added
+- Provisioning count
+
 ## [2.5] - 2024-06-21
 ### Added
 - Button controls for idle current

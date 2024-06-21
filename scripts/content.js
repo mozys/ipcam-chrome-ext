@@ -290,7 +290,23 @@ const injectBarcode = async () => {
     // `http://bwipjs-api.metafloor.com/?bcid=${barcodeType}&text=${serialNo}`
     
     imageWrapper.appendChild(img)
+    const provisioningWrapper = document.createElement('div')
+    const provisioningCountEl = document.createElement('span')
+    provisioningCountEl.innerHTML = '?'
+    provisioningCountEl.id = 'provisioning-count'
+
+    provisioningWrapper.style.position = 'absolute'
+    provisioningWrapper.style.bottom = 'calc(100% + 0.125rem)'
+    provisioningWrapper.style.fontWeight = 'bold'
+    provisioningWrapper.textContent = 'x provisioned'
+
+    provisioningWrapper.prepend(provisioningCountEl)
+
+    imageWrapper.append(provisioningWrapper)
+
     footer.appendChild(imageWrapper)
+
+    await fetchProvisioningCount(serialNo)
 }
 
 const observeActivation = () => {
@@ -302,8 +318,7 @@ const observeActivation = () => {
         for (const mutation of mutationList) {
             const modalHeader = document.querySelector('.modal-title')
             if (modalHeader && (modalHeader.textContent === 'Activation and transmission successful!')) {
-                const barcodeWrapper = document.getElementById('barcode-wrapper')
-                barcodeWrapper.style.background = 'lime'                
+                fetchProvisioningCount(getSerioalNo())
                 observer.disconnect()
                 break
             }
@@ -312,6 +327,35 @@ const observeActivation = () => {
 
     const observer = new MutationObserver(callback);
     observer.observe(targetNode, config);
+}
+
+const fetchProvisioningCount = async (id) => {
+    console.log('fetch provCount for', id)
+    let count = '?'
+
+    const barcodeWrapper = document.getElementById('barcode-wrapper')
+    barcodeWrapper.style.background = 'yellow'
+
+    try {
+        res = await fetch(`${labelPrintServiceBaseURL}/api/ipcams/${id}/data`)
+    } catch (err) {
+        console.error('could not fetch label data')
+        return
+    }
+
+    if (res.status === 404) {
+        count = 0
+    } else if (res.status === 200) {
+        const labelData = await res.json()
+        count = labelData.provisioningCount
+    }
+
+    const countEl = document.getElementById('provisioning-count')
+    countEl.innerHTML = count
+
+    if (count > 0) {
+        barcodeWrapper.style.background = 'lime'
+    }
 }
 
 if (formElement) {

@@ -1,3 +1,7 @@
+## [2.5] - 2024-06-21
+### Added
+- Button controls for idle current
+
 ## [2.4] - 2024-06-18
 ### Added
 - Barcode background color turns green on successful activation

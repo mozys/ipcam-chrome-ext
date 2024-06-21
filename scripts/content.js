@@ -48,6 +48,54 @@ const _bisForm = getBisForm()
 const formElement = _bisForm?.formElement
 const bisConfig = _bisForm?.bisConfig
 
+const rewriteListItemText = (listItemElement, text) => {
+    listItemElement.childNodes[2].childNodes[0].childNodes[0].innerHTML = text
+}
+
+const createControls = (listItemElement) => {
+    const controlsElement = listItemElement.childNodes[2].childNodes[1].childNodes[0]
+    const inputElement = controlsElement.childNodes[0].childNodes[1]
+
+    // controlsElement.childNodes[0].style.visibility = 'hidden'
+
+    const btnGroup = document.createElement('div')
+    btnGroup.setAttribute('role', 'group')
+    btnGroup.classList.add('w-100', 'btn-group')
+
+    const yesBtn = document.createElement('button')
+    yesBtn.classList.add('btn', 'w-50', 'radio-btn', 'btn-outline-success')
+    yesBtn.innerHTML = 'YES'
+
+    yesBtn.addEventListener('click', () => {
+        console.log('yes')
+        inputElement.focus()
+        inputElement.value = '130'
+        inputElement.blur()
+        yesBtn.classList.remove('btn-outline-success')
+        yesBtn.classList.add('btn-success')
+        noBtn.classList.add('btn-outline-danger')
+        noBtn.classList.remove('btn-danger')
+    })
+
+    const noBtn = document.createElement('button')
+    noBtn.classList.add('btn', 'w-50', 'radio-btn', 'btn-outline-danger')
+    noBtn.innerHTML = 'NO'
+
+    noBtn.addEventListener('click', () => {
+        inputElement.focus()
+        inputElement.value = ''
+        inputElement.blur()
+        noBtn.classList.remove('btn-outline-danger')
+        noBtn.classList.add('btn-danger')
+        yesBtn.classList.add('btn-outline-success')
+        yesBtn.classList.remove('btn-success')
+    })
+
+    btnGroup.append(yesBtn)
+    btnGroup.append(noBtn)
+    controlsElement.append(btnGroup)
+}
+
 const redesignBisPage = async () => {
     const options = await chrome.storage.sync.get()
     console.log(options)
@@ -113,6 +161,13 @@ const redesignBisPage = async () => {
         _num.innerText = `${bisItem.groupNo}. ${bisItem.groupTag.toUpperCase()}#${bisItem.itemNo}`
         listItems[bisItem.listIndex].prepend(_num)
         listItems[bisItem.listIndex].classList.add('pt-4')
+
+        if (_num.innerText === '3. HARDWARE#5') {
+            const listItemElement = listItems[bisItem.listIndex]
+            rewriteListItemText(listItemElement, 'Idle current <= 200mA?')
+            createControls(listItemElement)
+        }
+
         _ul.appendChild(listItems[bisItem.listIndex])
     })
 

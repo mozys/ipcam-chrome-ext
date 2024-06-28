@@ -1,3 +1,8 @@
+## [2.7] - 2024-06-28
+### Added
+- Test stats
+- Submit button context colors based on test stats
+
 ## [2.6] - 2024-06-21
 ### Added
 - Provisioning count

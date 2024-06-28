@@ -9,18 +9,18 @@ const getBisForm = () => {
     }
 
     const bisConfig = [
-        { groupNo: 3, groupTag: 'hardware', itemNo: 1, listIndex: 6 },
-        { groupNo: 3, groupTag: 'hardware', itemNo: 6, listIndex: 11 },
-        { groupNo: 2, groupTag: 'focus', itemNo: 1, listIndex: 3, disabled: true },
-        { groupNo: 1, groupTag: 'backend', itemNo: 1, listIndex: 0, disabled: true },
-        { groupNo: 1, groupTag: 'backend', itemNo: 2, listIndex: 1, disabled: true },
-        { groupNo: 1, groupTag: 'backend', itemNo: 3, listIndex: 2 },
-        { groupNo: 2, groupTag: 'focus', itemNo: 2, listIndex: 4 },
-        { groupNo: 2, groupTag: 'focus', itemNo: 3, listIndex: 5 },
-        { groupNo: 3, groupTag: 'hardware', itemNo: 2, listIndex: 7 },
-        { groupNo: 3, groupTag: 'hardware', itemNo: 3, listIndex: 8 },
-        { groupNo: 3, groupTag: 'hardware', itemNo: 4, listIndex: 9, disabled: true },
-        { groupNo: 3, groupTag: 'hardware', itemNo: 5, listIndex: 10 },
+        { groupNo: 3, groupTag: 'hardware', itemNo: 1, listIndex: 6, test: 'powerLED' },
+        { groupNo: 3, groupTag: 'hardware', itemNo: 6, listIndex: 11, test: 'heater' },
+        { groupNo: 2, groupTag: 'focus', itemNo: 1, listIndex: 3, test: 'autofocus', disabled: true },
+        { groupNo: 1, groupTag: 'backend', itemNo: 1, listIndex: 0, test: 'batchToken', disabled: true },
+        { groupNo: 1, groupTag: 'backend', itemNo: 2, listIndex: 1, test: 'backend', disabled: true },
+        { groupNo: 1, groupTag: 'backend', itemNo: 3, listIndex: 2, test: 'statusLED' },
+        { groupNo: 2, groupTag: 'focus', itemNo: 2, listIndex: 4, test: 'focus' },
+        { groupNo: 2, groupTag: 'focus', itemNo: 3, listIndex: 5, test: 'snapshot' },
+        { groupNo: 3, groupTag: 'hardware', itemNo: 2, listIndex: 7, test: 'digitalInputLED' },
+        { groupNo: 3, groupTag: 'hardware', itemNo: 3, listIndex: 8, test: 'digitalInputVideo' },
+        { groupNo: 3, groupTag: 'hardware', itemNo: 4, listIndex: 9, test: 'nfc', disabled: true },
+        { groupNo: 3, groupTag: 'hardware', itemNo: 5, listIndex: 10, test: 'idleCurrent' },
     ]
 
     return { formElement, bisConfig }
@@ -66,15 +66,41 @@ const createControls = (listItemElement) => {
     yesBtn.classList.add('btn', 'w-50', 'radio-btn', 'btn-outline-success')
     yesBtn.innerHTML = 'YES'
 
+    const setYes = () => {
+        yesBtn.classList.remove('btn-outline-success')
+        yesBtn.classList.add('btn-success')
+        noBtn.classList.add('btn-outline-danger')
+        noBtn.classList.remove('btn-danger')
+    }
+
+    const setNo = () => {
+        noBtn.classList.remove('btn-outline-danger')
+        noBtn.classList.add('btn-danger')
+        yesBtn.classList.add('btn-outline-success')
+        yesBtn.classList.remove('btn-success')
+    }
+
+    const reset = () => {
+        yesBtn.classList.add('btn-outline-success')
+        yesBtn.classList.remove('btn-success')
+        noBtn.classList.add('btn-outline-danger')
+        noBtn.classList.remove('btn-danger')
+        yesBtn.blur()
+        noBtn.blur()
+    }
+
+    inputElement.addEventListener('change', (e) => {
+        if (!e.target.value) {
+            reset()
+        }
+    })
+
     yesBtn.addEventListener('click', () => {
         console.log('yes')
         inputElement.focus()
         inputElement.value = '130'
         inputElement.blur()
-        yesBtn.classList.remove('btn-outline-success')
-        yesBtn.classList.add('btn-success')
-        noBtn.classList.add('btn-outline-danger')
-        noBtn.classList.remove('btn-danger')
+        setYes()
     })
 
     const noBtn = document.createElement('button')
@@ -83,12 +109,9 @@ const createControls = (listItemElement) => {
 
     noBtn.addEventListener('click', () => {
         inputElement.focus()
-        inputElement.value = ''
+        inputElement.value = 'failed'
         inputElement.blur()
-        noBtn.classList.remove('btn-outline-danger')
-        noBtn.classList.add('btn-danger')
-        yesBtn.classList.add('btn-outline-success')
-        yesBtn.classList.remove('btn-success')
+        setNo()
     })
 
     btnGroup.append(yesBtn)
@@ -169,6 +192,11 @@ const redesignBisPage = async () => {
         }
 
         _ul.appendChild(listItems[bisItem.listIndex])
+
+        if (bisItem.test === 'batchToken' ) {
+            console.log('Remove status badge')
+            console.log(listItems[bisItem.listIndex].querySelector('.test-step-status').innerHTML = '')
+        }
     })
 
     const alert = document.createElement('div')
@@ -309,9 +337,50 @@ const injectBarcode = async () => {
     await fetchProvisioningCount(serialNo)
 }
 
+const updateStats = () => {
+    const notStarted = document.querySelectorAll('.test-step-status .badge-secondary').length
+    const passed = document.querySelectorAll('.test-step-status .badge-success').length
+    const failed = document.querySelectorAll('.test-step-status .badge-danger').length
+    console.log({
+        notStarted,
+        passed,
+        failed
+    })
+
+    const submitBtn = document.getElementById('submit-results')
+    let statsElement = document.getElementById('injected-stats')
+    if (!statsElement) {
+        statsElement = document.createElement('ul')
+        submitBtn.parentElement.append(statsElement)
+        statsElement.id = 'injected-stats'
+        statsElement.style.display = 'flex'
+        statsElement.style.gap = '1rem'
+        statsElement.style.justifyContent = 'center'
+        statsElement.style.listStyleType = 'none'
+    }
+
+    const newHTML = `<li><span class="badge badge-secondary">${notStarted}</span> not started</li><li><span class="badge badge-danger">${failed}</span> failed</li><li><span class="badge badge-success">${passed}</span> passed</li>`
+
+    if (statsElement.innerHTML !== newHTML) {
+        statsElement.innerHTML = newHTML
+
+        if (failed) {
+            submitBtn.classList.remove('btn-primary', 'btn-secondary', 'btn-success')
+            submitBtn.classList.add('btn-danger')
+        } else if (notStarted) {
+            submitBtn.classList.remove('btn-primary', 'btn-danger', 'btn-success')
+            submitBtn.classList.add('btn-secondary')
+        } else {
+            console.log('YAHOOOOOOOOO!!!')
+            submitBtn.classList.remove('btn-primary', 'btn-danger', 'btn-secondary')
+            submitBtn.classList.add('btn-success')
+        }
+    }
+}
+
 const observeActivation = () => {
     const targetNode = document.getElementById('main')
-    const config = { childList: true, subtree: true }
+    const config = { attributes: true, childList: true, subtree: true }
 
     const callback = (mutationList, observer) => {
         console.log('mutation observed')
@@ -323,6 +392,8 @@ const observeActivation = () => {
                 break
             }
         }
+
+        updateStats()
     }
 
     const observer = new MutationObserver(callback);

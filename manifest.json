@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "IPCAM S/N",
   "description": "Render IPCAM serial number as barcode",
-  "version": "2.6",
+  "version": "2.7",
   "icons": {
     "16": "images/icon-16.png",
     "32": "images/icon-32.png",
@@ -14,8 +14,7 @@
       "css": ["css/bootstrap.min.css"],
       "js": ["scripts/bwip-js-min.js", "scripts/content.js"],
       "matches": [
-        "http://localhost:*/*",
-        "http://*/*"
+        "http://*/bis"
       ]
     }
   ],

@@ -27,7 +27,7 @@ const getBisForm = () => {
     return { formElement, bisConfig: tests }
 }
 
-const setBrand = () => {
+const getBrand = () => {
     const productName = document.querySelector('.bis.container div.h2:nth-of-type(2)').innerHTML
     if (productName.startsWith('LCAM')) {
         brand = 'LZ'
@@ -36,6 +36,8 @@ const setBrand = () => {
     } else {
         brand = 'N/A'
     }
+
+    return brand
 }
 
 const getSerioalNo = () => {
@@ -46,10 +48,6 @@ const getSerioalNo = () => {
 
     return _el.textContent
 }
-
-const _bisForm = getBisForm()
-const formElement = _bisForm?.formElement
-const bisConfig = _bisForm?.bisConfig
 
 const rewriteListItemText = (listItemElement, text) => {
     listItemElement.querySelector('p').innerHTML = text
@@ -204,7 +202,7 @@ const redesignBisPage = async () => {
     const _ul = document.createElement('ul')
     _ul.id = _ulId
     _ul.classList.add('list-group', 'mb-3')
-    formElement.prepend(_ul)
+    document.querySelector('.test-form').prepend(_ul)
 
     tests.forEach((testItem) => {
         const _label = document.createElement('span')
@@ -264,6 +262,63 @@ const redesignBisPage = async () => {
     */
 }
 
+const printLabel = async (id, brand, lensType) => {
+    let deviceType = ''
+    switch (`${brand}.${lensType}`) {
+        case 'PF.standard':
+            deviceType = 'voc10'
+            break
+        case 'PF.weitwinkel':
+            deviceType = 'voc5'
+            break
+        case 'LZ.standard':
+            deviceType = 'lcamf'
+            break
+        case 'LZ.weitwinkel':
+            deviceType = 'lcamw'
+            break
+    }
+    
+    let labelData
+    try {
+        res = await fetch(`${labelPrintServiceBaseURL}/api/ipcams/${id}/data`)
+        labelData = await res.json()
+    } catch (err) {
+        alert('could not fetch label data')
+        return
+    }
+
+    try {
+        await fetch(`${labelPrintServiceBaseURL}/api/labels/print`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ deviceType, data: labelData, description: `${deviceType}#${id}` }),
+        })
+
+    } catch (err) {
+        alert('could not print label')
+        return
+    }
+}
+
+const injectProvisioningCount = async () => {
+    const serialNo = getSerioalNo()
+    if (!serialNo) {
+        return
+    }
+
+    const provisioningWrapper = document.createElement('div')
+    provisioningWrapper.id = 'provisioning-wrapper'
+    provisioningWrapper.innerHTML = `
+        <span id="provisioning-count">?</span>x provisioned
+    `
+    footer.append(provisioningWrapper)
+
+    await fetchProvisioningCount(serialNo)
+}
+
 const injectBarcode = async () => {
     const serialNo = getSerioalNo()
     if (!serialNo) {
@@ -278,112 +333,38 @@ const injectBarcode = async () => {
 
     console.log({ serialNo, barcodeType })
 
-    let imageWrapper = document.getElementById('barcode-wrapper')
-    if (imageWrapper) {
-        imageWrapper.remove()
-        document.querySelector('[data-barcode]').remove()
+    let barcodeWrapper = document.getElementById('barcode-wrapper')
+    if (barcodeWrapper) {
+        barcodeWrapper.remove()
     }
 
-    imageWrapper = document.createElement('div')
-    imageWrapper.id = 'barcode-wrapper'
-    imageWrapper.style.cursor = 'pointer'
-    imageWrapper.addEventListener('click', async () => {
-        const id = serialNo
-        const lensType = options.lensType
-
-        let deviceType = ''
-        switch (`${brand}.${lensType}`) {
-            case 'PF.standard':
-                deviceType = 'voc10'
-                break
-            case 'PF.weitwinkel':
-                deviceType = 'voc5'
-                break
-            case 'LZ.standard':
-                deviceType = 'lcamf'
-                break
-            case 'LZ.weitwinkel':
-                deviceType = 'lcamw'
-                break
-        }
-        
-        return console.log({
-            id,
-            deviceType,
-            lensType,
-        })
-
-        let labelData
-        try {
-            res = await fetch(`${labelPrintServiceBaseURL}/api/ipcams/${id}/data`)
-            labelData = await res.json()
-        } catch (err) {
-            alert('could not fetch label data')
-            return
-        }
-
-        try {
-            await fetch(`${labelPrintServiceBaseURL}/api/labels/print`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ deviceType, data: labelData, description: `${deviceType}#${id}` }),
-            })
-
-        } catch (err) {
-            alert('could not print label')
-            return
-        }
-
+    barcodeWrapper = document.createElement('div')
+    barcodeWrapper.id = 'barcode-wrapper'
+    barcodeWrapper.addEventListener('click', async () => {
+        printLabel(serialNo, getBrand(), options.lensType)
     })
 
-
     const canvas = document.createElement('canvas')
-    const img = new Image()
-    img.onload = function() {
+    const barcodeImage = new Image()
+    barcodeImage.onload = function() {
         const width = this.width
         const height = Math.round(width * hScale)
-        console.log('w x h', width, height)
 
-        let styleElem = document.querySelector('[data-barcode]')
-        if (styleElem) {
-            styleElem.remove()
-        }
-
-        styleElem = document.createElement("style")
-        styleElem.toggleAttribute('data-barcode')
-        document.head.appendChild(styleElem)
-        styleElem.innerHTML = `#barcode-wrapper { position: absolute; bottom: 30px; background: yellow; padding: 0.875rem; } #barcode-wrapper img { width: ${width}px; height: ${height}px; }`
+        barcodeImage.style.width = `${width}px`
+        barcodeImage.style.height = `${height}px`
     }
+
     bwipjs.toCanvas(canvas, {
         bcid: barcodeType,
         text: serialNo,
         includeText: false,
     })
-    img.src = canvas.toDataURL('image/png')
+
+    barcodeImage.src = canvas.toDataURL('image/png')
     // `http://bwipjs-api.metafloor.com/?bcid=${barcodeType}&text=${serialNo}`
     
-    imageWrapper.appendChild(img)
-    const provisioningWrapper = document.createElement('div')
-    const provisioningCountEl = document.createElement('span')
-    provisioningCountEl.innerHTML = '?'
-    provisioningCountEl.id = 'provisioning-count'
-
-    provisioningWrapper.style.position = 'absolute'
-    provisioningWrapper.style.bottom = 'calc(100% + 0.125rem)'
-    provisioningWrapper.style.fontWeight = 'bold'
-    provisioningWrapper.textContent = 'x provisioned'
-
-    provisioningWrapper.prepend(provisioningCountEl)
-
-    imageWrapper.append(provisioningWrapper)
-
-    footer.appendChild(imageWrapper)
-
-    console.debug({ hScale })
-
-    await fetchProvisioningCount(serialNo)
+    barcodeWrapper.append(barcodeImage)
+    footer.append(barcodeWrapper)
 }
 
 const updateStats = () => {
@@ -460,7 +441,7 @@ const fetchProvisioningCount = async (id) => {
     let count = '?'
 
     const barcodeWrapper = document.getElementById('barcode-wrapper')
-    barcodeWrapper.style.background = 'yellow'
+    barcodeWrapper.classList.remove('provisioned')
 
     try {
         res = await fetch(`${labelPrintServiceBaseURL}/api/ipcams/${id}/data`)
@@ -480,7 +461,7 @@ const fetchProvisioningCount = async (id) => {
     countEl.innerHTML = count
 
     if (count > 0) {
-        barcodeWrapper.style.background = 'lime'
+        barcodeWrapper.classList.add('provisioned')
     }
 }
 
@@ -516,10 +497,6 @@ const setDefaultOptions = async () => {
 
     await chrome.storage.sync.set({ options: defaultOptions })
     return defaultOptions
-}
-
-const selectTestForm = () => {
-    return document.querySelector('.test-form')
 }
 
 const injectOptionsControl = async () => {
@@ -615,13 +592,18 @@ const tests = [
     { groupNo: 3, groupTag: 'hardware', itemNo: 5, listIndex: 10, test: 'idleCurrent' },
 ]
 
+const sleep = async (ms) => {
+    return new Promise(resolve => setTimeout(resolve, ms))
+}
+
 ;(async () => {
     options = await getOptions()
     await injectOptionsControl()
-    setBrand()
     await redesignBisPage()
+    await sleep(1000)
+    await injectBarcode()
+    await injectProvisioningCount()
     /*
     observerMutations()
-    setTimeout(injectBarcode, 1000)
     */
 })()

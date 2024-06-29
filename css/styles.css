@@ -13,7 +13,7 @@
 
 #main {
   padding-top: 36px;
-  padding-bottom: 96px;
+  padding-bottom: 96px !important;
 }
 
 .test-label {
@@ -28,4 +28,23 @@
 
 .hidden {
   display: none;
+}
+
+#barcode-wrapper {
+  position: absolute;
+  bottom: 30px;
+  background: rgba(255, 255, 0, 0.8);
+  padding: 0.875rem;
+  cursor: pointer;
+}
+
+#barcode-wrapper.provisioned {
+  background-color: rgba(0, 255, 0, 0.5);
+}
+
+#provisioning-wrapper {
+  position: absolute;
+  bottom: 120px;
+  left: 0.875rem;
+  font-weight: bold;
 }

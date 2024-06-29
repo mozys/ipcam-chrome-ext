@@ -48,3 +48,11 @@
   left: 0.875rem;
   font-weight: bold;
 }
+
+#injected-stats {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  list-style-type: none;
+}

@@ -165,8 +165,7 @@ const redesignIdleCurrentTest = (listItemElement) => {
 
 const presetBatchToken = (listItemElement) => {
     const badge = listItemElement.querySelector('.test-step-status .badge')
-    badge.classList.remove('badge-secondary')
-    badge.classList.add('badge-light')
+    badge.style.display = 'none'
     
     const input = listItemElement.querySelector('input.txt-in')
     input.value = options.bisToken
@@ -367,44 +366,47 @@ const injectBarcode = async () => {
     footer.append(barcodeWrapper)
 }
 
+const injectStats = () => {
+    const statsEl = document.createElement('ul')
+    statsEl.id = 'injected-stats'
+    document.getElementById('submit-results').parentElement.append(statsEl)
+    statsEl.innerHTML = `
+    <li><span class="badge badge-secondary" id="not-started-count">?</span> not started</li>
+    <li><span class="badge badge-danger" id="failed-count">?</span> failed</li>
+    <li><span class="badge badge-success" id="success-count">?</span> passed</li>
+    `
+}
+
 const updateStats = () => {
+    const statsEl = document.getElementById('injected-stats')
+
     const notStarted = document.querySelectorAll('.test-step-status .badge-secondary').length
     const passed = document.querySelectorAll('.test-step-status .badge-success').length
     const failed = document.querySelectorAll('.test-step-status .badge-danger').length
-    console.log({
-        notStarted,
-        passed,
-        failed
-    })
+    const newStats = [notStarted, failed, passed]
+    const oldStats = statsEl.getAttribute('data-stats') || []
+    console.log({ stats: newStats.join(',')})
 
-    const submitBtn = document.getElementById('submit-results')
-    // submitBtn.innerHTML = 'Send test results, obtain license key and reset camera factory defaults'
-    let statsElement = document.getElementById('injected-stats')
-    if (!statsElement) {
-        statsElement = document.createElement('ul')
-        submitBtn.parentElement.append(statsElement)
-        statsElement.id = 'injected-stats'
-        statsElement.style.display = 'flex'
-        statsElement.style.gap = '1rem'
-        statsElement.style.justifyContent = 'center'
-        statsElement.style.listStyleType = 'none'
+    if (newStats.join() === oldStats.join()) {
+        console.log('no stats update')
+        return
     }
 
-    const newHTML = `<li><span class="badge badge-secondary">${notStarted}</span> not started</li><li><span class="badge badge-danger">${failed}</span> failed</li><li><span class="badge badge-success">${passed}</span> passed</li>`
+    statsEl.setAttribute('data-stats', newStats.join())
+    document.getElementById('not-started-count').innerHTML = newStats[0]
+    document.getElementById('failed-count').innerHTML = newStats[1]
+    document.getElementById('success-count').innerHTML = newStats[2]
 
-    if (statsElement.innerHTML !== newHTML) {
-        statsElement.innerHTML = newHTML
-
-        if (failed) {
-            submitBtn.classList.remove('btn-primary', 'btn-secondary', 'btn-success')
-            submitBtn.classList.add('btn-danger')
-        } else if (notStarted) {
-            submitBtn.classList.remove('btn-primary', 'btn-danger', 'btn-success')
-            submitBtn.classList.add('btn-secondary')
-        } else {
-            submitBtn.classList.remove('btn-primary', 'btn-danger', 'btn-secondary')
-            submitBtn.classList.add('btn-success')
-        }
+    const fakeSubmitBtn = document.getElementById('fake-submit-btn')
+    if (failed) {
+        fakeSubmitBtn.classList.remove('btn-primary', 'btn-secondary', 'btn-success')
+        fakeSubmitBtn.classList.add('btn-danger')
+    } else if (notStarted) {
+        fakeSubmitBtn.classList.remove('btn-primary', 'btn-danger', 'btn-success')
+        fakeSubmitBtn.classList.add('btn-secondary')
+    } else {
+        fakeSubmitBtn.classList.remove('btn-primary', 'btn-danger', 'btn-secondary')
+        fakeSubmitBtn.classList.add('btn-success')
     }
 }
 
@@ -603,7 +605,7 @@ const sleep = async (ms) => {
     await sleep(1000)
     await injectBarcode()
     await injectProvisioningCount()
-    /*
-    observerMutations()
-    */
+    injectStats()
+    updateStats()
+    // observerMutations()
 })()

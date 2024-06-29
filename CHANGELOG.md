@@ -1,6 +1,7 @@
 ## [3.0] - 2024-07-01
 ### Changed
 - Make options editable on page
+- Make option changes without page reload
 - Refactor code and cleanup design
 - Improve UX
 

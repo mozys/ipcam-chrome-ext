@@ -142,20 +142,20 @@ const toggleSetupMode = () => {
     const isOfflineMode = options.setupMode === 'offline'
     
     const elementsToSkip = document.querySelectorAll('.list-group-item[data-skip-offline=true]')
-    const fakeSubmitBtn = document.getElementById('fake-submit-btn')
+    const submitBtn = document.getElementById('submit-results')
     const fakeBackendBtn = document.getElementById('fake-backend-btn')
 
     // online -> offline
     if (isOfflineMode) {
-        elementsToSkip.forEach((el) => el.style.display = 'none')
-        fakeSubmitBtn.style.display = 'none'
-        fakeBackendBtn.style.display = 'inline-block'
+        elementsToSkip.forEach((el) => el.classList.add('hidden'))
+        submitBtn.classList.add('hidden')
+        fakeBackendBtn.classList.remove('hidden')
         return
     }
 
-    elementsToSkip.forEach((el) => el.style.display = 'block')
-    fakeSubmitBtn.style.display = 'inline-block'
-    fakeBackendBtn.style.display = 'none'
+    elementsToSkip.forEach((el) => el.classList.remove('hidden'))
+    submitBtn.classList.remove('hidden')
+    fakeBackendBtn.classList.add('hidden')
 }
 
 const redesignIdleCurrentTest = (listItemElement) => {
@@ -165,7 +165,7 @@ const redesignIdleCurrentTest = (listItemElement) => {
 
 const presetBatchToken = (listItemElement) => {
     const badge = listItemElement.querySelector('.test-step-status .badge')
-    badge.style.display = 'none'
+    badge.classList.add('hidden')
     
     const input = listItemElement.querySelector('input.txt-in')
     input.value = options.bisToken
@@ -184,7 +184,7 @@ const redesignStatusLEDTest = (listItemElement) => {
     listItemElement.querySelector('.test-step-controls').prepend(fakeBackendBtn)
 
     if (options.setupMode === 'online') {
-        fakeBackendBtn.style.display = 'none'
+        fakeBackendBtn.classList.add('hidden')
     }
 }
 
@@ -226,39 +226,19 @@ const redesignBisPage = async () => {
         }
 
         if (isOfflineMode && testItem?.skipOffline) {
-            listItems[testItem.listIndex].style.display = 'none'
+            listItems[testItem.listIndex].classList.add('hidden')
         }
     })
 
     const _cards = document.querySelectorAll('.test-form > .card')
     _cards.forEach(_card => {
-        _card.style.display = 'none'
+        _card.classList.add('hidden')
     })
 
-    const originalSubmitBtn = document.getElementById('submit-results')
-    const fakeSubmitBtn = document.createElement('button')
-    fakeSubmitBtn.id = 'fake-submit-btn'
-    fakeSubmitBtn.innerHTML = 'Send test results, obtain license key and reset camera to factory defaults'
-    fakeSubmitBtn.classList.add('btn', 'btn-secondary')
-    fakeSubmitBtn.addEventListener('click', () => {
-        originalSubmitBtn.click()
-    })
-
-    originalSubmitBtn.parentElement.append(fakeSubmitBtn)
-    originalSubmitBtn.style.display = 'none'
+    const submitBtn = document.getElementById('submit-results')
     if (isOfflineMode) {
-        fakeSubmitBtn.style.display = 'none'
+        submitBtn.classList.add('hidden')
     }
-
-    // TODO: hide
-    /*
-    if (isOfflineMode) {
-        const backendStartBtn = document.querySelector('.start-btn')
-        backendStartBtn.classList.add('mb-2')
-        const _parent = document.querySelectorAll('.test-step-controls')[2]
-        _parent.prepend(backendStartBtn)
-    }
-    */
 }
 
 const printLabel = async (id, brand, lensType) => {
@@ -367,27 +347,41 @@ const injectBarcode = async () => {
 }
 
 const injectStats = () => {
-    const statsEl = document.createElement('ul')
+    const statsEl = document.createElement('div')
     statsEl.id = 'injected-stats'
     document.getElementById('submit-results').parentElement.append(statsEl)
     statsEl.innerHTML = `
-    <li><span class="badge badge-secondary" id="not-started-count">?</span> not started</li>
-    <li><span class="badge badge-danger" id="failed-count">?</span> failed</li>
-    <li><span class="badge badge-success" id="success-count">?</span> passed</li>
+    <div>
+        <ul>
+            <li><span class="badge badge-secondary" id="not-started-count">?</span> not started</li>
+            <li><span class="badge badge-danger" id="failed-count">?</span> failed</li>
+            <li><span class="badge badge-success" id="success-count">?</span> passed</li>
+        </ul>
+    </div>
     `
 }
 
 const updateStats = () => {
     const statsEl = document.getElementById('injected-stats')
 
-    const notStarted = document.querySelectorAll('.test-step-status .badge-secondary').length
-    const passed = document.querySelectorAll('.test-step-status .badge-success').length
-    const failed = document.querySelectorAll('.test-step-status .badge-danger').length
-    const newStats = [notStarted, failed, passed]
-    const oldStats = statsEl.getAttribute('data-stats') || []
-    console.log({ stats: newStats.join(',')})
+    const badges = document.querySelectorAll('.test-form .list-group-item:not(.hidden) .test-step-status .badge:not(.hidden)')
+    const notStarted = Array.from(badges).filter((badge) => {
+        return badge.classList.contains('badge-secondary')
+    }).length
+    const failed = Array.from(badges).filter((badge) => {
+        return badge.classList.contains('badge-danger')
+    }).length
+    const passed = Array.from(badges).filter((badge) => {
+        return badge.classList.contains('badge-success')
+    }).length
 
-    if (newStats.join() === oldStats.join()) {
+    console.log({ notStarted, failed, passed }, 'xxx')
+
+    const newStats = [notStarted, failed, passed]
+    const oldStatsJoined = statsEl.getAttribute('data-stats') || []
+    console.log({ newStats: newStats.join(), oldStats: oldStatsJoined })
+
+    if (newStats.join() === oldStatsJoined) {
         console.log('no stats update')
         return
     }
@@ -397,16 +391,16 @@ const updateStats = () => {
     document.getElementById('failed-count').innerHTML = newStats[1]
     document.getElementById('success-count').innerHTML = newStats[2]
 
-    const fakeSubmitBtn = document.getElementById('fake-submit-btn')
+    const totalStatsEl = document.querySelector('#injected-stats > div')
     if (failed) {
-        fakeSubmitBtn.classList.remove('btn-primary', 'btn-secondary', 'btn-success')
-        fakeSubmitBtn.classList.add('btn-danger')
+        totalStatsEl.classList.remove('btn-secondary', 'bg-success')
+        totalStatsEl.classList.add('bg-danger')
     } else if (notStarted) {
-        fakeSubmitBtn.classList.remove('btn-primary', 'btn-danger', 'btn-success')
-        fakeSubmitBtn.classList.add('btn-secondary')
+        totalStatsEl.classList.remove('bg-danger', 'bg-success')
+        totalStatsEl.classList.add('bg-secondary')
     } else {
-        fakeSubmitBtn.classList.remove('btn-primary', 'btn-danger', 'btn-secondary')
-        fakeSubmitBtn.classList.add('btn-success')
+        totalStatsEl.classList.remove('bg-danger', 'bg-secondary')
+        totalStatsEl.classList.add('bg-success')
     }
 }
 
@@ -417,9 +411,6 @@ const observerMutations = () => {
     const callback = (mutationList, observer) => {
         for (const mutation of mutationList) {
             const modalHeader = document.querySelector('.modal-title')
-            if (modalHeader) {
-                updateStats()
-            }
             if (modalHeader && (modalHeader.textContent === 'Activation and transmission successful!')) {
                 fetchProvisioningCount(getSerioalNo())
                 observer.disconnect()
@@ -428,9 +419,10 @@ const observerMutations = () => {
         }
 
         try {
+            console.log('just a try')
             updateStats()
         } catch (e) {
-            //
+            console.error(e)
         } 
     }
 
@@ -607,5 +599,5 @@ const sleep = async (ms) => {
     await injectProvisioningCount()
     injectStats()
     updateStats()
-    // observerMutations()
+    observerMutations()
 })()

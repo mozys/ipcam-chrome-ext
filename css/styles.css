@@ -27,7 +27,7 @@
 }
 
 .hidden {
-  display: none;
+  display: none !important;
 }
 
 #barcode-wrapper {
@@ -50,9 +50,22 @@
 }
 
 #injected-stats {
+  display: flex;
+  justify-content: center;
+}
+
+#injected-stats > div {
+  height: 5px;
+  background-color: red;
   margin-top: 0.5rem;
+  border-radius: 9999px;
+}
+
+#injected-stats ul {
   display: flex;
   gap: 1rem;
   justify-content: center;
   list-style-type: none;
+  padding: 0;
+  padding-top: 0.5rem;
 }

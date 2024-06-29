@@ -1,4 +1,7 @@
 ## [3.0] - 2024-07-01
+### Added
+- Add BIS token preset and cache (8 hours)
+
 ### Changed
 - Make options editable on page
 - Make option changes without page reload

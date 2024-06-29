@@ -11,6 +11,7 @@
   },
   "content_scripts": [
     {
+      "css": ["css/styles.css"],
       "js": ["scripts/bwip-js-min.js", "scripts/content.js"],
       "matches": [
         "http://*/bis"

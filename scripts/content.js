@@ -1,7 +1,5 @@
-const labelPrintServiceBaseURL = 'http://192.168.1.90:8020'
-let brand = ''
-
-const dispatch = (event) => {
+/* utilities */
+const $event = (event) => {
     return new Event(event, { bubbles: true })
 }
 
@@ -11,30 +9,32 @@ const getBisForm = () => {
         return null
     }
 
-    const bisConfig = [
+    const tests = [
         { groupNo: 3, groupTag: 'hardware', itemNo: 1, listIndex: 6, test: 'powerLED' },
         { groupNo: 3, groupTag: 'hardware', itemNo: 6, listIndex: 11, test: 'heater' },
-        { groupNo: 2, groupTag: 'focus', itemNo: 1, listIndex: 3, test: 'autofocus', disabled: true },
-        { groupNo: 1, groupTag: 'backend', itemNo: 1, listIndex: 0, test: 'batchToken', disabled: true },
-        { groupNo: 1, groupTag: 'backend', itemNo: 2, listIndex: 1, test: 'backend', disabled: true },
+        { groupNo: 2, groupTag: 'focus', itemNo: 1, listIndex: 3, test: 'autofocus', skipOffline: true },
+        { groupNo: 1, groupTag: 'backend', itemNo: 1, listIndex: 0, test: 'batchToken', skipOffline: true },
+        { groupNo: 1, groupTag: 'backend', itemNo: 2, listIndex: 1, test: 'backend', skipOffline: true },
         { groupNo: 1, groupTag: 'backend', itemNo: 3, listIndex: 2, test: 'statusLED' },
         { groupNo: 2, groupTag: 'focus', itemNo: 2, listIndex: 4, test: 'focus' },
         { groupNo: 2, groupTag: 'focus', itemNo: 3, listIndex: 5, test: 'snapshot' },
         { groupNo: 3, groupTag: 'hardware', itemNo: 2, listIndex: 7, test: 'digitalInputLED' },
         { groupNo: 3, groupTag: 'hardware', itemNo: 3, listIndex: 8, test: 'digitalInputVideo' },
-        { groupNo: 3, groupTag: 'hardware', itemNo: 4, listIndex: 9, test: 'nfc', disabled: true },
+        { groupNo: 3, groupTag: 'hardware', itemNo: 4, listIndex: 9, test: 'nfc', skipOffline: true },
         { groupNo: 3, groupTag: 'hardware', itemNo: 5, listIndex: 10, test: 'idleCurrent' },
     ]
 
-    return { formElement, bisConfig }
+    return { formElement, bisConfig: tests }
 }
 
 const setBrand = () => {
-    const productName = document.querySelectorAll('.h2')[1].innerHTML
+    const productName = document.querySelector('.bis.container div.h2:nth-of-type(2)').innerHTML
     if (productName.startsWith('LCAM')) {
         brand = 'LZ'
     } else if (productName.startsWith('Event')) {
         brand = 'PF'
+    } else {
+        brand = 'N/A'
     }
 }
 
@@ -101,7 +101,7 @@ const createControls = (listItemElement) => {
     yesBtn.addEventListener('click', () => {
         console.log('yes')
         inputElement.value = '130'
-        inputElement.dispatchEvent(dispatch('input'))
+        inputElement.dispatchEvent($event('input'))
         setYes()
     })
 
@@ -111,7 +111,7 @@ const createControls = (listItemElement) => {
 
     noBtn.addEventListener('click', () => {
         inputElement.value = 'failed'
-        inputElement.dispatchEvent(dispatch('input'))
+        inputElement.dispatchEvent($event('input'))
         setNo()
     })
 
@@ -121,18 +121,52 @@ const createControls = (listItemElement) => {
 }
 
 const redesignBisPage = async () => {
-    console.log(optionsProxy)
+    const isOfflineMode = options.setupMode === 'offline'
+    console.log({ isOfflineMode })
 
-    const isOfflineMode = optionsProxy.setupMode === 'offline'
-
-    const mainElement = document.getElementById('main')
-    mainElement.style['padding-bottom'] = '96px'
-    mainElement.style['padding-top'] = '36px'
-
-    const listItems = document.querySelectorAll('div.list-group-item')
+    const listItems = document.querySelectorAll('.test-form .list-group-item')
     const _ul = document.createElement('ul')
     _ul.classList.add('list-group', 'mb-3')
 
+    tests.forEach((testItem) => {
+        if (isOfflineMode && testItem?.skipOffline) {
+            listItems[testItem.listIndex].style.visibility = 'hidden'
+            return
+        }
+
+        const _label = document.createElement('span')
+        _label.classList.add('badge', 'badge-light', 'text-muted', 'test-label')
+        _label.innerText = `${testItem.groupNo}. ${testItem.groupTag.toUpperCase()}#${testItem.itemNo}`
+        listItems[testItem.listIndex].setAttribute('data-test', testItem.test)
+        listItems[testItem.listIndex].prepend(_label)
+
+        // TODO: move out
+        if (testItem.test === 'idleCurrent') {
+            const listItemElement = listItems[testItem.listIndex]
+            rewriteListItemText(listItemElement, 'Idle current <= 200mA?')
+            createControls(listItemElement)
+        }
+        
+        // TODO: move out
+        if (testItem.test === 'batchToken' ) {
+            console.log('Remove status badge')
+            const badge = listItems[testItem.listIndex].querySelector('.test-step-status .badge')
+            badge.classList.remove('badge-secondary')
+            badge.classList.add('badge-light')
+            
+            const input = listItems[testItem.listIndex].querySelector('input.txt-in')
+            input.value = options.bisToken
+            input.dispatchEvent($event('change'))
+        }
+
+        _ul.append(listItems[testItem.listIndex])
+    })
+
+    formElement.prepend(_ul)
+    const _cards = document.querySelectorAll('.test-form > .card')
+    _cards.forEach(_card => _card.remove())
+
+    // TODO: move out
     const idleCurrentInput = document.querySelectorAll('.txt-in')[1]
     idleCurrentInput.addEventListener('keydown', (e) => {
         console.log(e.key)
@@ -152,6 +186,7 @@ const redesignBisPage = async () => {
         }
     })
 
+    // TODO: replace
     const submitBtn = document.getElementById('submit-results')
     submitBtn.innerHTML = 'Send test results, obtain license key and reset camera to factory defaults'
     submitBtn.addEventListener('click', (e) => {
@@ -159,15 +194,6 @@ const redesignBisPage = async () => {
     })
 
     if (isOfflineMode) {
-        const badge = document.createElement('span')
-        badge.classList.add('badge', 'badge-light', 'text-muted')
-        badge.textContent = 'offline'.toUpperCase()
-        badge.style['font-size'] = '0.75rem'
-
-        const h = document.querySelector('div.h2')
-        h.textContent = h.textContent + ' '
-        h.appendChild(badge)
-        
         const backendStartBtn = document.querySelector('.start-btn')
         backendStartBtn.classList.add('mb-2')
         const _parent = document.querySelectorAll('.test-step-controls')[2]
@@ -176,47 +202,6 @@ const redesignBisPage = async () => {
         const submitBtn = document.getElementById('submit-results')
         submitBtn.remove()
     }
-    
-    bisConfig.forEach((bisItem) => {
-        if (isOfflineMode && bisItem?.disabled) {
-            listItems[bisItem.listIndex].style.visibility = 'hidden'
-            return
-        }
-
-        const _num = document.createElement('span')
-        _num.classList.add('badge', 'badge-light', 'text-muted')
-        _num.style.position = 'absolute'
-        _num.style.top = '0'
-        _num.style.left = '0'
-        _num.innerText = `${bisItem.groupNo}. ${bisItem.groupTag.toUpperCase()}#${bisItem.itemNo}`
-        listItems[bisItem.listIndex].prepend(_num)
-        listItems[bisItem.listIndex].classList.add('pt-4')
-        listItems[bisItem.listIndex].setAttribute('data-test', bisItem.test)
-
-        if (bisItem.test === 'idleCurrent') {
-            const listItemElement = listItems[bisItem.listIndex]
-            rewriteListItemText(listItemElement, 'Idle current <= 200mA?')
-            createControls(listItemElement)
-        }
-
-        _ul.appendChild(listItems[bisItem.listIndex])
-
-        if (bisItem.test === 'batchToken' ) {
-            console.log('Remove status badge')
-            const badge = listItems[bisItem.listIndex].querySelector('.test-step-status .badge')
-            badge.classList.remove('badge-secondary')
-            badge.classList.add('badge-light')
-
-            const input = listItems[bisItem.listIndex].querySelector('input.txt-in')
-            input.value = optionsProxy.bisToken
-            input.dispatchEvent(dispatch('change'))
-        }
-    })
-
-    formElement.prepend(_ul)
-
-    const _cards = document.querySelectorAll('div.card')
-    _cards.forEach(_card => _card.remove())
 }
 
 const injectBarcode = async () => {
@@ -225,7 +210,7 @@ const injectBarcode = async () => {
         return
     }
 
-    const barcodeType = optionsProxy.barcodeType
+    const barcodeType = options.barcodeType
     let hScale = 1
     if (barcodeType === 'code128') {
         hScale = 0.2
@@ -244,7 +229,7 @@ const injectBarcode = async () => {
     imageWrapper.style.cursor = 'pointer'
     imageWrapper.addEventListener('click', async () => {
         const id = serialNo
-        const lensType = optionsProxy.lensType
+        const lensType = options.lensType
 
         let deviceType = ''
         switch (`${brand}.${lensType}`) {
@@ -444,13 +429,16 @@ const isEmptyObject = (obj) => {
 }
 
 const getOptions = async () => {
-    const { options } = await chrome.storage.sync.get('options')
-    if (!isEmptyObject(options)) {
-        return options
+    let { options } = await chrome.storage.sync.get('options')
+    if (isEmptyObject(options)) {
+        options = await setDefaultOptions()
     }
-
-    const defaultOptions = await setDefaultOptions()
-    return defaultOptions
+    return new Proxy(options, {
+        set(obj, prop, value) {
+            obj[prop] = value
+            chrome.storage.sync.set({ options: obj })
+        }
+    })
 }
 
 const setOptions = async (options) => {
@@ -474,40 +462,32 @@ const selectTestForm = () => {
     return document.querySelector('.test-form')
 }
 
-let optionsProxy
 const injectOptionsControl = async () => {
     const optionsEl = document.createElement('div')
     optionsEl.id = 'options-control'
-    optionsEl.style.position = 'absolute'
-    optionsEl.style.top = 0
-    optionsEl.style.padding = '0.5rem'
-    optionsEl.style.backgroundColor = 'rgba(0, 0, 0, .03)'
-    optionsEl.style.border = '1px solid rgba(0, 0, 0, .125)'   
-    optionsEl.style.borderRadius = '0.25rem' 
-    optionsEl.classList.add('form-row')
-
-    optionsEl.setAttribute('data-prop', 'barcodeType')
     optionsEl.innerHTML = `
-    <div class="col">
-        <select class="form-control-sm" id="setupModeSelect">
-            <option value="online">Online</option>
-            <option value="offline">Offline</option>
-        </select>
-    </div>
-    <div class="col">
-        <select class="form-control-sm" id="lensTypeSelect">
-            <option value="standard">Standard</option>
-            <option value="weitwinkel">Weitwinkel</option>
-        </select>
-    </div>
-    <div class="col">
-        <select class="form-control-sm" id="barcodeTypeSelect">
-            <option value="datamatrix">Datamatrix</option>
-            <option value="code128">Code128</option>
-        </select>
-    </div>
-    <div class="col">
-        <input type="text" class="form-control-sm bg-light text-muted border" placeholder="BIS token" id="bisTokenInput" readonly>
+    <div class="form-row">
+        <div class="col">
+            <select class="form-control-sm" id="setupModeSelect">
+                <option value="online">Online</option>
+                <option value="offline">Offline</option>
+            </select>
+        </div>
+        <div class="col">
+            <select class="form-control-sm" id="lensTypeSelect">
+                <option value="standard">Standard</option>
+                <option value="weitwinkel">Weitwinkel</option>
+            </select>
+        </div>
+        <div class="col">
+            <select class="form-control-sm" id="barcodeTypeSelect">
+                <option value="datamatrix">Datamatrix</option>
+                <option value="code128">Code128</option>
+            </select>
+        </div>
+        <div class="col">
+            <input type="text" class="form-control-sm bg-light text-muted border" placeholder="BIS token" id="bisTokenInput" readonly>
+        </div>
     </div>
     `
     document.getElementById('app').append(optionsEl)
@@ -528,15 +508,14 @@ const injectOptionsControl = async () => {
         bisTokenInput.classList.remove('bg-white')
         bisTokenInput.classList.add('bg-light')
         bisTokenInput.classList.add('text-muted')
-        optionsProxy.bisToken = e.target.value
-        optionsProxy.expiresAt = Date.now() + 8 * 60 * 60 * 1000
+        options.bisToken = e.target.value
+        options.expiresAt = Date.now() + 8 * 60 * 60 * 1000
 
         const input = document.querySelector('[data-test=batchToken] .txt-in')
-        input.value = optionsProxy.bisToken
-        input.dispatchEvent(dispatch('change'))
+        input.value = options.bisToken
+        input.dispatchEvent($event('input'))
     })
 
-    const options = await getOptions()
     barcodeTypeSelect.value = options.barcodeType
     setupModeSelect.value = options.setupMode
     lensTypeSelect.value = options.lensType
@@ -545,30 +524,44 @@ const injectOptionsControl = async () => {
         bisTokenInput.value = options.bisToken
     }
 
-    optionsProxy = new Proxy(options, {
-        set(obj, prop, value) {
-            obj[prop] = value
-            chrome.storage.sync.set({ options: obj })
-        }
-    })
-    
     barcodeTypeSelect.addEventListener('change', (e) => {
-        optionsProxy.barcodeType = e.target.value
-        injectBarcode()
+        options.barcodeType = e.target.value
+        // injectBarcode()
     })
     setupModeSelect.addEventListener('change', (e) => {
-        optionsProxy.setupMode = e.target.value
-        redesignBisPage()
+        options.setupMode = e.target.value
+        // redesignBisPage()
     })
     lensTypeSelect.addEventListener('change', (e) => {
-        optionsProxy.lensType = e.target.value
+        options.lensType = e.target.value
     })
 }
 
-(async () => {
+let options
+let brand = ''
+const labelPrintServiceBaseURL = 'http://192.168.1.90:8020'
+const tests = [
+    { groupNo: 3, groupTag: 'hardware', itemNo: 1, listIndex: 6, test: 'powerLED' },
+    { groupNo: 3, groupTag: 'hardware', itemNo: 6, listIndex: 11, test: 'heater' },
+    { groupNo: 2, groupTag: 'focus', itemNo: 1, listIndex: 3, test: 'autofocus', skipOffline: true },
+    { groupNo: 1, groupTag: 'backend', itemNo: 1, listIndex: 0, test: 'batchToken', skipOffline: true },
+    { groupNo: 1, groupTag: 'backend', itemNo: 2, listIndex: 1, test: 'backend', skipOffline: true },
+    { groupNo: 1, groupTag: 'backend', itemNo: 3, listIndex: 2, test: 'statusLED' },
+    { groupNo: 2, groupTag: 'focus', itemNo: 2, listIndex: 4, test: 'focus' },
+    { groupNo: 2, groupTag: 'focus', itemNo: 3, listIndex: 5, test: 'snapshot' },
+    { groupNo: 3, groupTag: 'hardware', itemNo: 2, listIndex: 7, test: 'digitalInputLED' },
+    { groupNo: 3, groupTag: 'hardware', itemNo: 3, listIndex: 8, test: 'digitalInputVideo' },
+    { groupNo: 3, groupTag: 'hardware', itemNo: 4, listIndex: 9, test: 'nfc', skipOffline: true },
+    { groupNo: 3, groupTag: 'hardware', itemNo: 5, listIndex: 10, test: 'idleCurrent' },
+]
+
+;(async () => {
+    options = await getOptions()
     await injectOptionsControl()
     setBrand()
-    redesignBisPage()
+    await redesignBisPage()
+    /*
     observerMutations()
     setTimeout(injectBarcode, 1000)
+    */
 })()

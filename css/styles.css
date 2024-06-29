@@ -1,0 +1,27 @@
+.bg-white {
+  background-color: white;
+}
+
+#options-control {
+  position: absolute;
+  top: 0;
+  padding: 0.5rem;
+  background-color: rgba(0, 0, 0, .03);
+  border: 1px solid rgba(0, 0, 0, .125);
+  border-radius: 0.25rem;
+}
+
+#main {
+  padding-top: 36px;
+  padding-bottom: 96px;
+}
+
+.test-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.list-group-item[data-test] {
+  padding-top: 1.5rem;
+}

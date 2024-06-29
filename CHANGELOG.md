@@ -1,3 +1,9 @@
+## [3.0] - 2024-07-01
+### Changed
+- Make options editable on page
+- Refactor code and cleanup design
+- Improve UX
+
 ## [2.7] - 2024-06-28
 ### Added
 - Test stats

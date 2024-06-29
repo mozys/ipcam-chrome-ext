@@ -36,6 +36,7 @@
   background: rgba(255, 255, 0, 0.8);
   padding: 0.875rem;
   cursor: pointer;
+  transition: all;
 }
 
 #barcode-wrapper.provisioned {
@@ -56,7 +57,7 @@
 
 #injected-stats > div {
   height: 5px;
-  background-color: red;
+  background-color: lightgray;
   margin-top: 0.5rem;
   border-radius: 9999px;
 }

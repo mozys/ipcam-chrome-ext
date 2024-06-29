@@ -313,15 +313,15 @@ const injectBarcode = async () => {
     console.log({ serialNo, barcodeType })
 
     let barcodeWrapper = document.getElementById('barcode-wrapper')
-    if (barcodeWrapper) {
-        barcodeWrapper.remove()
+    if (!barcodeWrapper) {
+        barcodeWrapper = document.createElement('div')
+        barcodeWrapper.id = 'barcode-wrapper'
+        barcodeWrapper.addEventListener('click', async () => {
+            printLabel(serialNo, getBrand(), options.lensType)
+        })
+    } else {
+        barcodeWrapper.innerHTML = ''
     }
-
-    barcodeWrapper = document.createElement('div')
-    barcodeWrapper.id = 'barcode-wrapper'
-    barcodeWrapper.addEventListener('click', async () => {
-        printLabel(serialNo, getBrand(), options.lensType)
-    })
 
     const canvas = document.createElement('canvas')
     const barcodeImage = new Image()
@@ -557,7 +557,7 @@ const injectOptionsControl = async () => {
 
     barcodeTypeSelect.addEventListener('change', (e) => {
         options.barcodeType = e.target.value
-        // injectBarcode()
+        injectBarcode()
     })
     setupModeSelect.addEventListener('change', (e) => {
         options.setupMode = e.target.value

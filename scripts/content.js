@@ -165,7 +165,7 @@ const redesignIdleCurrentTest = (listItemElement) => {
 
 const presetBatchToken = (listItemElement) => {
     const badge = listItemElement.querySelector('.test-step-status .badge')
-    badge.classList.add('hidden')
+    badge.remove()
     
     const input = listItemElement.querySelector('input.txt-in')
     input.value = options.bisToken

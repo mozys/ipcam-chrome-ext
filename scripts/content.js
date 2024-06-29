@@ -52,14 +52,12 @@ const formElement = _bisForm?.formElement
 const bisConfig = _bisForm?.bisConfig
 
 const rewriteListItemText = (listItemElement, text) => {
-    listItemElement.childNodes[2].childNodes[0].childNodes[0].innerHTML = text
+    listItemElement.querySelector('p').innerHTML = text
 }
 
 const createControls = (listItemElement) => {
-    const controlsElement = listItemElement.childNodes[2].childNodes[1].childNodes[0]
-    const inputElement = controlsElement.childNodes[0].childNodes[1]
-
-    // controlsElement.childNodes[0].style.visibility = 'hidden'
+    const controlsElement = listItemElement.querySelector('.test-step-controls')
+    const inputElement = controlsElement.querySelector('.txt-in')
 
     const btnGroup = document.createElement('div')
     btnGroup.setAttribute('role', 'group')
@@ -68,6 +66,10 @@ const createControls = (listItemElement) => {
     const yesBtn = document.createElement('button')
     yesBtn.classList.add('btn', 'w-50', 'radio-btn', 'btn-outline-success')
     yesBtn.innerHTML = 'YES'
+
+    const noBtn = document.createElement('button')
+    noBtn.classList.add('btn', 'w-50', 'radio-btn', 'btn-outline-danger')
+    noBtn.innerHTML = 'NO'
 
     const setYes = () => {
         yesBtn.classList.remove('btn-outline-success')
@@ -95,19 +97,37 @@ const createControls = (listItemElement) => {
     inputElement.addEventListener('change', (e) => {
         if (!e.target.value) {
             reset()
+            return
         }
+
+        const _value = parseInt(e.target.value)
+        if (isNaN(_value)) return
+
+        _value <= 200 ? setYes() : setNo()
     })
 
+    inputElement.addEventListener('keydown', (e) => {
+        const isSpecialKey = e.key.length > 1
+        if (isSpecialKey) {
+            return
+        }
+
+        const isFirstDigit = e.target.value.length === 0
+        const isZero = (/0/).test(e.key)
+        const isNumber = (/\d/).test(e.key)
+        console.log({ isNumber, isZero, isFirstDigit })
+        if (!isNumber || (isFirstDigit && isZero)) {
+            console.log('bad input')
+            return e.preventDefault()
+        }
+    })    
+
     yesBtn.addEventListener('click', () => {
-        console.log('yes')
         inputElement.value = '130'
         inputElement.dispatchEvent($event('input'))
         setYes()
     })
 
-    const noBtn = document.createElement('button')
-    noBtn.classList.add('btn', 'w-50', 'radio-btn', 'btn-outline-danger')
-    noBtn.innerHTML = 'NO'
 
     noBtn.addEventListener('click', () => {
         inputElement.value = 'failed'
@@ -120,34 +140,56 @@ const createControls = (listItemElement) => {
     controlsElement.append(btnGroup)
 }
 
+const toggleSetupMode = () => {
+    const isOfflineMode = options.setupMode === 'offline'
+    
+    const elementsToSkip = document.querySelectorAll('.list-group-item[data-skip-offline=true]')
+    const fakeSubmitBtn = document.getElementById('fake-submit-btn')
+
+    // online -> offline
+    if (isOfflineMode) {
+        elementsToSkip.forEach((el) => el.style.display = 'none')
+        fakeSubmitBtn.style.display = 'none'
+        return
+    }
+
+    elementsToSkip.forEach((el) => el.style.display = 'block')
+    fakeSubmitBtn.style.display = 'inline-block'
+}
+
+const redesignIdleCurrentTest = (listItemElement) => {
+    rewriteListItemText(listItemElement, 'Idle current <= 200mA?')
+    createControls(listItemElement)
+}
+
 const redesignBisPage = async () => {
+    const _ulId = 'redesigned-test-list'
+    if (document.getElementById(_ulId)) {
+        return toggleSetupMode()
+    }
+
     const isOfflineMode = options.setupMode === 'offline'
     console.log({ isOfflineMode })
 
     const listItems = document.querySelectorAll('.test-form .list-group-item')
     const _ul = document.createElement('ul')
+    _ul.id = _ulId
     _ul.classList.add('list-group', 'mb-3')
 
     tests.forEach((testItem) => {
-        if (isOfflineMode && testItem?.skipOffline) {
-            listItems[testItem.listIndex].style.visibility = 'hidden'
-            return
-        }
-
         const _label = document.createElement('span')
         _label.classList.add('badge', 'badge-light', 'text-muted', 'test-label')
         _label.innerText = `${testItem.groupNo}. ${testItem.groupTag.toUpperCase()}#${testItem.itemNo}`
         listItems[testItem.listIndex].setAttribute('data-test', testItem.test)
+        listItems[testItem.listIndex].setAttribute('data-skip-offline', !!testItem.skipOffline)
         listItems[testItem.listIndex].prepend(_label)
 
-        // TODO: move out
         if (testItem.test === 'idleCurrent') {
-            const listItemElement = listItems[testItem.listIndex]
-            rewriteListItemText(listItemElement, 'Idle current <= 200mA?')
-            createControls(listItemElement)
+            redesignIdleCurrentTest(listItems[testItem.listIndex])
         }
         
         // TODO: move out
+        /*
         if (testItem.test === 'batchToken' ) {
             console.log('Remove status badge')
             const badge = listItems[testItem.listIndex].querySelector('.test-step-status .badge')
@@ -158,41 +200,40 @@ const redesignBisPage = async () => {
             input.value = options.bisToken
             input.dispatchEvent($event('change'))
         }
+        */
 
+        if (isOfflineMode && testItem?.skipOffline) {
+            listItems[testItem.listIndex].classList.add('hidden')
+        }
+        
         _ul.append(listItems[testItem.listIndex])
     })
 
     formElement.prepend(_ul)
+
     const _cards = document.querySelectorAll('.test-form > .card')
-    _cards.forEach(_card => _card.remove())
-
-    // TODO: move out
-    const idleCurrentInput = document.querySelectorAll('.txt-in')[1]
-    idleCurrentInput.addEventListener('keydown', (e) => {
-        console.log(e.key)
-        const isSpecialKey = e.key.length > 1
-        console.log({ isSpecialKey })
-        if (isSpecialKey) {
-            return
-        }
-
-        const isFirstDigit = idleCurrentInput.value.length === 0
-        const isZero = (/0/).test(e.key)
-        const isNumber = (/\d/).test(e.key)
-        console.log({ isNumber, isZero, isFirstDigit })
-        if (!isNumber || (isFirstDigit && isZero)) {
-            console.log('bad input')
-            return e.preventDefault()
-        }
+    _cards.forEach(_card => {
+        _card.style.display = 'none'
     })
 
     // TODO: replace
-    const submitBtn = document.getElementById('submit-results')
-    submitBtn.innerHTML = 'Send test results, obtain license key and reset camera to factory defaults'
-    submitBtn.addEventListener('click', (e) => {
-        e.target.classList.remove('btn-primary')
+    const originalSubmitBtn = document.getElementById('submit-results')
+    const fakeSubmitBtn = document.createElement('button')
+    fakeSubmitBtn.id = 'fake-submit-btn'
+    fakeSubmitBtn.innerHTML = 'Send test results, obtain license key and reset camera to factory defaults'
+    fakeSubmitBtn.classList.add('btn', 'btn-secondary')
+    fakeSubmitBtn.addEventListener('click', () => {
+        originalSubmitBtn.click()
     })
 
+    originalSubmitBtn.parentElement.append(fakeSubmitBtn)
+    originalSubmitBtn.style.display = 'none'
+    if (isOfflineMode) {
+        fakeSubmitBtn.style.display = 'none'
+    }
+
+    // TODO: hide
+    /*
     if (isOfflineMode) {
         const backendStartBtn = document.querySelector('.start-btn')
         backendStartBtn.classList.add('mb-2')
@@ -202,6 +243,7 @@ const redesignBisPage = async () => {
         const submitBtn = document.getElementById('submit-results')
         submitBtn.remove()
     }
+    */
 }
 
 const injectBarcode = async () => {
@@ -530,7 +572,7 @@ const injectOptionsControl = async () => {
     })
     setupModeSelect.addEventListener('change', (e) => {
         options.setupMode = e.target.value
-        // redesignBisPage()
+        redesignBisPage()
     })
     lensTypeSelect.addEventListener('change', (e) => {
         options.lensType = e.target.value

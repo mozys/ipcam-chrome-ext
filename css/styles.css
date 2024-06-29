@@ -25,3 +25,7 @@
 .list-group-item[data-test] {
   padding-top: 1.5rem;
 }
+
+.hidden {
+  display: none;
+}

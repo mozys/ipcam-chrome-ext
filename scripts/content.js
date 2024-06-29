@@ -55,7 +55,7 @@ const rewriteListItemText = (listItemElement, text) => {
     listItemElement.querySelector('p').innerHTML = text
 }
 
-const createControls = (listItemElement) => {
+const createIdleCurrentControls = (listItemElement) => {
     const controlsElement = listItemElement.querySelector('.test-step-controls')
     const inputElement = controlsElement.querySelector('.txt-in')
 
@@ -145,21 +145,50 @@ const toggleSetupMode = () => {
     
     const elementsToSkip = document.querySelectorAll('.list-group-item[data-skip-offline=true]')
     const fakeSubmitBtn = document.getElementById('fake-submit-btn')
+    const fakeBackendBtn = document.getElementById('fake-backend-btn')
 
     // online -> offline
     if (isOfflineMode) {
         elementsToSkip.forEach((el) => el.style.display = 'none')
         fakeSubmitBtn.style.display = 'none'
+        fakeBackendBtn.style.display = 'inline-block'
         return
     }
 
     elementsToSkip.forEach((el) => el.style.display = 'block')
     fakeSubmitBtn.style.display = 'inline-block'
+    fakeBackendBtn.style.display = 'none'
 }
 
 const redesignIdleCurrentTest = (listItemElement) => {
     rewriteListItemText(listItemElement, 'Idle current <= 200mA?')
-    createControls(listItemElement)
+    createIdleCurrentControls(listItemElement)
+}
+
+const presetBatchToken = (listItemElement) => {
+    const badge = listItemElement.querySelector('.test-step-status .badge')
+    badge.classList.remove('badge-secondary')
+    badge.classList.add('badge-light')
+    
+    const input = listItemElement.querySelector('input.txt-in')
+    input.value = options.bisToken
+    input.dispatchEvent($event('input'))
+}
+
+const redesignStatusLEDTest = (listItemElement) => {
+    const backendBtn = document.querySelector('.list-group-item[data-test=backend] .btn')
+    const fakeBackendBtn = document.createElement('button')
+    fakeBackendBtn.id = 'fake-backend-btn'
+    fakeBackendBtn.classList.add('btn', 'btn-primary', 'btn-block', 'start-btn')
+    fakeBackendBtn.innerHTML = 'Start'
+    fakeBackendBtn.addEventListener('click', () => {
+        backendBtn.click()
+    })
+    listItemElement.querySelector('.test-step-controls').prepend(fakeBackendBtn)
+
+    if (options.setupMode === 'online') {
+        fakeBackendBtn.style.display = 'none'
+    }
 }
 
 const redesignBisPage = async () => {
@@ -175,6 +204,7 @@ const redesignBisPage = async () => {
     const _ul = document.createElement('ul')
     _ul.id = _ulId
     _ul.classList.add('list-group', 'mb-3')
+    formElement.prepend(_ul)
 
     tests.forEach((testItem) => {
         const _label = document.createElement('span')
@@ -184,39 +214,30 @@ const redesignBisPage = async () => {
         listItems[testItem.listIndex].setAttribute('data-skip-offline', !!testItem.skipOffline)
         listItems[testItem.listIndex].prepend(_label)
 
+        _ul.append(listItems[testItem.listIndex])
+
         if (testItem.test === 'idleCurrent') {
             redesignIdleCurrentTest(listItems[testItem.listIndex])
         }
         
-        // TODO: move out
-        /*
-        if (testItem.test === 'batchToken' ) {
-            console.log('Remove status badge')
-            const badge = listItems[testItem.listIndex].querySelector('.test-step-status .badge')
-            badge.classList.remove('badge-secondary')
-            badge.classList.add('badge-light')
-            
-            const input = listItems[testItem.listIndex].querySelector('input.txt-in')
-            input.value = options.bisToken
-            input.dispatchEvent($event('change'))
+        if (testItem.test === 'batchToken') {
+            presetBatchToken(listItems[testItem.listIndex])
         }
-        */
+
+        if (testItem.test === 'statusLED') {
+            redesignStatusLEDTest(listItems[testItem.listIndex])
+        }
 
         if (isOfflineMode && testItem?.skipOffline) {
-            listItems[testItem.listIndex].classList.add('hidden')
+            listItems[testItem.listIndex].style.display = 'none'
         }
-        
-        _ul.append(listItems[testItem.listIndex])
     })
-
-    formElement.prepend(_ul)
 
     const _cards = document.querySelectorAll('.test-form > .card')
     _cards.forEach(_card => {
         _card.style.display = 'none'
     })
 
-    // TODO: replace
     const originalSubmitBtn = document.getElementById('submit-results')
     const fakeSubmitBtn = document.createElement('button')
     fakeSubmitBtn.id = 'fake-submit-btn'
@@ -239,9 +260,6 @@ const redesignBisPage = async () => {
         backendStartBtn.classList.add('mb-2')
         const _parent = document.querySelectorAll('.test-step-controls')[2]
         _parent.prepend(backendStartBtn)
-    
-        const submitBtn = document.getElementById('submit-results')
-        submitBtn.remove()
     }
     */
 }

@@ -11,17 +11,12 @@
   },
   "content_scripts": [
     {
-      "css": ["css/bootstrap.min.css"],
       "js": ["scripts/bwip-js-min.js", "scripts/content.js"],
       "matches": [
         "http://*/bis"
       ]
     }
   ],
-  "options_ui": {
-    "page": "options.html",
-    "open_in_tab": false
-  },
   "permissions": [
     "storage"
   ]

@@ -166,10 +166,21 @@ const redesignIdleCurrentTest = (listItemElement) => {
 const presetBatchToken = (listItemElement) => {
     const badge = listItemElement.querySelector('.test-step-status .badge')
     badge.remove()
-    
+
+    listItemElement.querySelector('.test-step-status').innerHTML = `
+    <span class="badge badge-light" id="auto-preset-badge">auto_preset</span>
+    `
+    const presetBadge = document.getElementById('auto-preset-badge')
     const input = listItemElement.querySelector('input.txt-in')
     input.value = options.bisToken
+    if (!input.value) {
+        presetBadge.style.display = 'none'
+    }
     input.dispatchEvent($event('input'))
+
+    input.addEventListener('change', () => {
+        presetBadge.style.display = 'none'
+    })
 }
 
 const redesignStatusLEDTest = (listItemElement) => {
@@ -540,7 +551,11 @@ const injectOptionsControl = async () => {
         bisTokenInput.classList.add('bg-light')
         bisTokenInput.classList.add('text-muted')
         options.bisToken = e.target.value
-        options.expiresAt = Date.now() + 8 * 60 * 60 * 1000
+        options.expiresAt = Date.now() +  10 * 1000 // 8 * 60 * 60 * 1000
+
+        if (!options.bisToken) {
+            return
+        }
 
         const input = document.querySelector('[data-test=batchToken] .txt-in')
         input.value = options.bisToken
@@ -553,6 +568,8 @@ const injectOptionsControl = async () => {
     
     if (options.expiresAt && options.expiresAt > Date.now()) {
         bisTokenInput.value = options.bisToken
+    } else {
+        options.bisToken = ''
     }
 
     barcodeTypeSelect.addEventListener('change', (e) => {

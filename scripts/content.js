@@ -16,13 +16,19 @@ const getBrand = () => {
     return brand
 }
 
-const getSerioalNo = () => {
+const setSerialNo = () => {
     const _el = document.querySelector('div.system-versionbar ul li > small:nth-child(2)')
     if (!_el) {
         return null
     }
 
-    return _el.textContent
+    serialNo = _el.innerHTML
+
+    _el.innerHTML = `
+    <a href="https://ipcam-bis-viewer-7f6439244e.firebaseapp.com/ipcam/${serialNo}" target="_blank">${serialNo}</a>
+    `
+    _el.classList.add('badge', 'badge-warning')
+    _el.style.cursor = 'pointer'
 }
 
 const rewriteListItemText = (listItemElement, text) => {
@@ -270,7 +276,6 @@ const printLabel = async (id, brand, lensType) => {
 }
 
 const injectProvisioningCount = async () => {
-    const serialNo = getSerioalNo()
     if (!serialNo) {
         return
     }
@@ -286,7 +291,6 @@ const injectProvisioningCount = async () => {
 }
 
 const injectBarcode = async () => {
-    const serialNo = getSerioalNo()
     if (!serialNo) {
         return
     }
@@ -400,7 +404,7 @@ const observerMutations = () => {
         for (const mutation of mutationList) {
             const modalHeader = document.querySelector('.modal-title')
             if (modalHeader && (modalHeader.textContent === 'Activation and transmission successful!')) {
-                fetchProvisioningCount(getSerioalNo())
+                fetchProvisioningCount(serialNo)
                 observer.disconnect()
                 break
             }
@@ -410,7 +414,7 @@ const observerMutations = () => {
             console.log('just a try')
             updateStats()
         } catch (e) {
-            console.error(e)
+            console.log(e)
         } 
     }
 
@@ -428,7 +432,7 @@ const fetchProvisioningCount = async (id) => {
     try {
         res = await fetch(`${labelPrintServiceBaseURL}/api/ipcams/${id}/data`)
     } catch (err) {
-        console.error('could not fetch label data')
+        console.log('could not fetch label data')
         return
     }
 
@@ -565,6 +569,7 @@ const injectOptionsControl = async () => {
 
 let options
 let brand = ''
+let serialNo = ''
 const labelPrintServiceBaseURL = 'http://192.168.1.90:8020'
 //                       h * min * s * ms
 const expirationTimeMs = 8 * 60 * 60 * 1000
@@ -606,6 +611,7 @@ const sleep = async (ms) => {
     await injectOptionsControl()
     await redesignBisPage()
     await sleep(1000)
+    setSerialNo()
     await injectBarcode()
     await injectProvisioningCount()
     injectStats()

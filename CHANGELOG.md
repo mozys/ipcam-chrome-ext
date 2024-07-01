@@ -1,6 +1,7 @@
 ## [3.0] - 2024-07-01
 ### Added
 - Add BIS token preset and cache (8 hours)
+- Link to BIS viewer
 
 ### Changed
 - Make options editable on page

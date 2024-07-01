@@ -55,8 +55,8 @@
   justify-content: center;
 }
 
-#injected-stats > div {
-  height: 5px;
+#total-stats-bar {
+  height: 0.75rem;
   background-color: lightgray;
   margin-top: 0.5rem;
   border-radius: 9999px;

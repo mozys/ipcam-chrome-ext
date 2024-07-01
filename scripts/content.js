@@ -3,30 +3,6 @@ const $event = (event) => {
     return new Event(event, { bubbles: true })
 }
 
-const getBisForm = () => {
-    const formElement = document.querySelector('div.bis .test-form')
-    if (!formElement) {
-        return null
-    }
-
-    const tests = [
-        { groupNo: 3, groupTag: 'hardware', itemNo: 1, listIndex: 6, test: 'powerLED' },
-        { groupNo: 3, groupTag: 'hardware', itemNo: 6, listIndex: 11, test: 'heater' },
-        { groupNo: 2, groupTag: 'focus', itemNo: 1, listIndex: 3, test: 'autofocus', skipOffline: true },
-        { groupNo: 1, groupTag: 'backend', itemNo: 1, listIndex: 0, test: 'batchToken', skipOffline: true },
-        { groupNo: 1, groupTag: 'backend', itemNo: 2, listIndex: 1, test: 'backend', skipOffline: true },
-        { groupNo: 1, groupTag: 'backend', itemNo: 3, listIndex: 2, test: 'statusLED' },
-        { groupNo: 2, groupTag: 'focus', itemNo: 2, listIndex: 4, test: 'focus' },
-        { groupNo: 2, groupTag: 'focus', itemNo: 3, listIndex: 5, test: 'snapshot' },
-        { groupNo: 3, groupTag: 'hardware', itemNo: 2, listIndex: 7, test: 'digitalInputLED' },
-        { groupNo: 3, groupTag: 'hardware', itemNo: 3, listIndex: 8, test: 'digitalInputVideo' },
-        { groupNo: 3, groupTag: 'hardware', itemNo: 4, listIndex: 9, test: 'nfc', skipOffline: true },
-        { groupNo: 3, groupTag: 'hardware', itemNo: 5, listIndex: 10, test: 'idleCurrent' },
-    ]
-
-    return { formElement, bisConfig: tests }
-}
-
 const getBrand = () => {
     const productName = document.querySelector('.bis.container div.h2:nth-of-type(2)').innerHTML
     if (productName.startsWith('LCAM')) {
@@ -163,7 +139,7 @@ const redesignIdleCurrentTest = (listItemElement) => {
     createIdleCurrentControls(listItemElement)
 }
 
-const presetBatchToken = (listItemElement) => {
+const presetBisToken = (listItemElement) => {
     const badge = listItemElement.querySelector('.test-step-status .badge')
     badge.remove()
 
@@ -214,7 +190,7 @@ const redesignBisPage = async () => {
     _ul.classList.add('list-group', 'mb-3')
     document.querySelector('.test-form').prepend(_ul)
 
-    tests.forEach((testItem) => {
+    testSuite.forEach((testItem) => {
         const _label = document.createElement('span')
         _label.classList.add('badge', 'badge-light', 'text-muted', 'test-label')
         _label.innerText = `${testItem.groupNo}. ${testItem.groupTag.toUpperCase()}#${testItem.itemNo}`
@@ -224,15 +200,15 @@ const redesignBisPage = async () => {
 
         _ul.append(listItems[testItem.listIndex])
 
-        if (testItem.test === 'idleCurrent') {
+        if (testItem.test === Test.idleCurrent) {
             redesignIdleCurrentTest(listItems[testItem.listIndex])
         }
         
-        if (testItem.test === 'batchToken') {
-            presetBatchToken(listItems[testItem.listIndex])
+        if (testItem.test === Test.bisToken) {
+            presetBisToken(listItems[testItem.listIndex])
         }
 
-        if (testItem.test === 'statusLED') {
+        if (testItem.test === Test.statusLED) {
             redesignStatusLEDTest(listItems[testItem.listIndex])
         }
 
@@ -363,6 +339,7 @@ const injectStats = () => {
     document.getElementById('submit-results').parentElement.append(statsEl)
     statsEl.innerHTML = `
     <div>
+        <div id="total-stats-bar"></div>
         <ul>
             <li><span class="badge badge-secondary" id="not-started-count">?</span> not started</li>
             <li><span class="badge badge-danger" id="failed-count">?</span> failed</li>
@@ -402,7 +379,7 @@ const updateStats = () => {
     document.getElementById('failed-count').innerHTML = newStats[1]
     document.getElementById('success-count').innerHTML = newStats[2]
 
-    const totalStatsEl = document.querySelector('#injected-stats > div')
+    const totalStatsEl = document.querySelector('#total-stats-bar')
     if (failed) {
         totalStatsEl.classList.remove('btn-secondary', 'bg-success')
         totalStatsEl.classList.add('bg-danger')
@@ -551,15 +528,16 @@ const injectOptionsControl = async () => {
         bisTokenInput.classList.add('bg-light')
         bisTokenInput.classList.add('text-muted')
         options.bisToken = e.target.value
-        options.expiresAt = Date.now() +  10 * 1000 // 8 * 60 * 60 * 1000
+        options.expiresAt = Date.now() + expirationTimeMs
 
         if (!options.bisToken) {
             return
         }
 
-        const input = document.querySelector('[data-test=batchToken] .txt-in')
+        const input = document.querySelector(`[data-test=${Test.bisToken}] .txt-in`)
         input.value = options.bisToken
         input.dispatchEvent($event('input'))
+        document.getElementById('auto-preset-badge').style.display = 'inline-block'
     })
 
     barcodeTypeSelect.value = options.barcodeType
@@ -588,19 +566,35 @@ const injectOptionsControl = async () => {
 let options
 let brand = ''
 const labelPrintServiceBaseURL = 'http://192.168.1.90:8020'
-const tests = [
-    { groupNo: 3, groupTag: 'hardware', itemNo: 1, listIndex: 6, test: 'powerLED' },
-    { groupNo: 3, groupTag: 'hardware', itemNo: 6, listIndex: 11, test: 'heater' },
-    { groupNo: 2, groupTag: 'focus', itemNo: 1, listIndex: 3, test: 'autofocus', skipOffline: true },
-    { groupNo: 1, groupTag: 'backend', itemNo: 1, listIndex: 0, test: 'batchToken', skipOffline: true },
-    { groupNo: 1, groupTag: 'backend', itemNo: 2, listIndex: 1, test: 'backend', skipOffline: true },
-    { groupNo: 1, groupTag: 'backend', itemNo: 3, listIndex: 2, test: 'statusLED' },
-    { groupNo: 2, groupTag: 'focus', itemNo: 2, listIndex: 4, test: 'focus' },
-    { groupNo: 2, groupTag: 'focus', itemNo: 3, listIndex: 5, test: 'snapshot' },
-    { groupNo: 3, groupTag: 'hardware', itemNo: 2, listIndex: 7, test: 'digitalInputLED' },
-    { groupNo: 3, groupTag: 'hardware', itemNo: 3, listIndex: 8, test: 'digitalInputVideo' },
-    { groupNo: 3, groupTag: 'hardware', itemNo: 4, listIndex: 9, test: 'nfc', skipOffline: true },
-    { groupNo: 3, groupTag: 'hardware', itemNo: 5, listIndex: 10, test: 'idleCurrent' },
+//                       h * min * s * ms
+const expirationTimeMs = 8 * 60 * 60 * 1000
+const Test = {
+    powerLED: 'powerLED',
+    heater: 'heater',
+    autofocus: 'autofocus',
+    bisToken: 'bisToken',
+    backend: 'backend',
+    statusLED: 'statusLED',
+    focus: 'focus',
+    snapshot: 'snapshot',
+    digitalInputLED: 'digitalInputLED',
+    digitalInputVideo: 'digitalInputVideo',
+    nfc: 'nfc',
+    idleCurrent: 'idleCurrent',
+}
+const testSuite = [
+    { groupNo: 3, groupTag: 'hardware', itemNo: 1, listIndex: 6, test: Test.powerLED },
+    { groupNo: 3, groupTag: 'hardware', itemNo: 6, listIndex: 11, test: Test.heater },
+    { groupNo: 2, groupTag: 'focus', itemNo: 1, listIndex: 3, test: Test.autofocus, skipOffline: true },
+    { groupNo: 1, groupTag: 'backend', itemNo: 1, listIndex: 0, test: Test.bisToken, skipOffline: true },
+    { groupNo: 1, groupTag: 'backend', itemNo: 2, listIndex: 1, test: Test.backend, skipOffline: true },
+    { groupNo: 1, groupTag: 'backend', itemNo: 3, listIndex: 2, test: Test.statusLED },
+    { groupNo: 2, groupTag: 'focus', itemNo: 2, listIndex: 4, test: Test.focus },
+    { groupNo: 2, groupTag: 'focus', itemNo: 3, listIndex: 5, test: Test.snapshot },
+    { groupNo: 3, groupTag: 'hardware', itemNo: 2, listIndex: 7, test: Test.digitalInputLED },
+    { groupNo: 3, groupTag: 'hardware', itemNo: 3, listIndex: 8, test: Test.digitalInputVideo },
+    { groupNo: 3, groupTag: 'hardware', itemNo: 4, listIndex: 9, test: Test.nfc, skipOffline: true },
+    { groupNo: 3, groupTag: 'hardware', itemNo: 5, listIndex: 10, test: Test.idleCurrent },
 ]
 
 const sleep = async (ms) => {

@@ -1,3 +1,7 @@
+## [3.1] - 2024-07-03
+### Changed
+- Fix invalid options issue
+
 ## [3.0] - 2024-07-01
 ### Added
 - Add BIS token preset and cache (8 hours)

@@ -16,6 +16,19 @@ const getBrand = () => {
     return brand
 }
 
+const pageAvailable = async () => {
+    let maxDuration = 5 * 1000
+    let testForm
+    let duration
+    const sleepTimeMs = 100
+    do {
+        console.log('waiting for page load...')
+        testForm = document.querySelector('.test-form')
+        await sleep(sleepTimeMs)
+        duration += sleepTimeMs
+    } while(!testForm && duration <= maxDuration)
+}
+
 const setSerialNo = () => {
     const _el = document.querySelector('div.system-versionbar ul li > small:nth-child(2)')
     if (!_el) {
@@ -451,13 +464,34 @@ const fetchProvisioningCount = async (id) => {
     }
 }
 
-const isEmptyObject = (obj) => {
-    return !!!Object.keys(obj).length
+const isNotValid = (options) => {
+    if (!options || typeof options !== 'options') {
+        return true
+    }
+
+    if (Object.keys(options).length !== Object.keys(defaultOptions).length) {
+        return true
+    }
+
+    if (Object.keys(options).join() !== Object.keys(defaultOptions).join()) {
+        return true
+    }
+
+    let res = false
+    for (prop in options) {
+        const _value = options[prop]
+        if (!validOptionValues[prop].includes(_value)) {
+            res = true
+            break
+        }
+    }
+    return res
 }
 
 const getOptions = async () => {
     let { options } = await chrome.storage.sync.get('options')
-    if (isEmptyObject(options)) {
+    if (isNotValid(options)) {
+        console.log('options not valid: setting defaults...')
         options = await setDefaultOptions()
     }
     return new Proxy(options, {
@@ -473,14 +507,6 @@ const setOptions = async (options) => {
 }
 
 const setDefaultOptions = async () => {
-    const defaultOptions = {
-        barcodeType: 'datamatrix',
-        setupMode: 'offline',
-        lensType: 'standard',
-        bisToken: '',
-        expiresAt: null,
-    }
-
     await chrome.storage.sync.set({ options: defaultOptions })
     return defaultOptions
 }
@@ -567,6 +593,35 @@ const injectOptionsControl = async () => {
     })
 }
 
+const BARCODE_TYPE = {
+    datamatrix: 'datamatrix',
+    code128: 'code128'
+}
+
+const SETUP_MODE = {
+    offline: 'offline',
+    online: 'online',
+}
+
+const LENS_TYPE = {
+    standard: 'standard',
+    weitwinkel: 'weitwinkel',
+}
+
+const defaultOptions = {
+    barcodeType: BARCODE_TYPE.datamatrix,
+    setupMode: SETUP_MODE.offline,
+    lensType: LENS_TYPE.standard,
+    bisToken: '',
+    expiresAt: null,
+}
+
+const validOptionValues = {
+    barcodeType: Object.keys(BARCODE_TYPE),
+    setupMode: Object.keys(SETUP_MODE),
+    lensType: Object.keys(LENS_TYPE),
+}
+
 let options
 let brand = ''
 let serialNo = ''
@@ -607,6 +662,7 @@ const sleep = async (ms) => {
 }
 
 ;(async () => {
+    await pageAvailable()
     options = await getOptions()
     await injectOptionsControl()
     await redesignBisPage()

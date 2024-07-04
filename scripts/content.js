@@ -38,9 +38,9 @@ const setSerialNo = () => {
     serialNo = _el.innerHTML
 
     _el.innerHTML = `
-    <a href="https://ipcam-bis-viewer-7f6439244e.firebaseapp.com/ipcam/${serialNo}" target="_blank">${serialNo}</a>
+    <a href="https://ipcam-bis-viewer-7f6439244e.firebaseapp.com/ipcam/${serialNo}" style="color: black;" target="_blank">${serialNo}</a>
     `
-    _el.classList.add('badge', 'badge-warning')
+    _el.classList.add('badge', 'badge-light')
     _el.style.cursor = 'pointer'
 }
 
@@ -200,7 +200,7 @@ const redesignBisPage = async () => {
         return toggleSetupMode()
     }
 
-    const isOfflineMode = options.setupMode === 'offline'
+    const isOfflineMode = options.setupMode === SETUP_MODE.offline
     console.log({ isOfflineMode })
 
     const listItems = document.querySelectorAll('.test-form .list-group-item')
@@ -465,25 +465,33 @@ const fetchProvisioningCount = async (id) => {
 }
 
 const isNotValid = (options) => {
-    if (!options || typeof options !== 'options') {
+    if (!options || typeof options !== 'object') {
+        console.log('options not valid: falsy or not of type object')
         return true
     }
 
     if (Object.keys(options).length !== Object.keys(defaultOptions).length) {
+        console.log('options not valid: bad number of props')
         return true
     }
 
-    if (Object.keys(options).join() !== Object.keys(defaultOptions).join()) {
+    if (Object.keys(options).sort().join() !== Object.keys(defaultOptions).sort().join()) {
+        console.log('options not valid: bad props')
         return true
     }
 
     let res = false
-    for (prop in options) {
-        const _value = options[prop]
-        if (!validOptionValues[prop].includes(_value)) {
+    for (prop in validOptionValues) {
+        const _value = options[prop] || ''
+        const _validValues = validOptionValues[prop]
+        console.log('validate options prop:', prop)
+        console.log('...value', _value, 'must be in', _validValues)
+        if (!_validValues.includes(_value)) {
             res = true
+            console.log('...invalid prop value')
             break
         }
+        console.log('...valid prop value')
     }
     return res
 }

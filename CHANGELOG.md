@@ -1,3 +1,7 @@
+## [3.2] - 2024-07-04
+### Changed
+- Fix options validations
+
 ## [3.1] - 2024-07-03
 ### Changed
 - Fix invalid options issue

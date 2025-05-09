@@ -158,6 +158,17 @@ const redesignIdleCurrentTest = (listItemElement) => {
     createIdleCurrentControls(listItemElement)
 }
 
+const createPreInfo = (listItemElement) => {
+    const el = document.createElement('div')
+    el.innerHTML = '<svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="exclamation-circle" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" class="mr-1 text-primary svg-inline--fa fa-exclamation-circle fa-w-16 fa-lg"><path data-v-2e87ced5="" fill="currentColor" d="M504 256c0 136.997-111.043 248-248 248S8 392.997 8 256C8 119.083 119.043 8 256 8s248 111.083 248 248zm-248 50c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z" class=""></path></svg>'
+    el.innerHTML += '<a href="#">Trigger digital input using the dock or test rig button</a>'
+    el.classList.add('pre-action-wrapper', 'pb-3')
+    listItemElement.prepend(el)
+}
+const redesignDigitalInputTest = (listItemElement) => {
+    createPreInfo(listItemElement)
+}
+
 const presetBisToken = (listItemElement) => {
     const badge = listItemElement.querySelector('.test-step-status .badge')
     badge.remove()
@@ -219,6 +230,10 @@ const redesignBisPage = async () => {
 
         _ul.append(listItems[testItem.listIndex])
 
+        if (testItem.test === Test.digitalInputLED) {
+            redesignDigitalInputTest(listItems[testItem.listIndex])
+        }
+
         if (testItem.test === Test.idleCurrent) {
             redesignIdleCurrentTest(listItems[testItem.listIndex])
         }
@@ -248,19 +263,19 @@ const redesignBisPage = async () => {
 }
 
 const printLabel = async (id, brand, lensType) => {
-    let deviceType = ''
+    let configId = ''
     switch (`${brand}.${lensType}`) {
         case 'PF.standard':
-            deviceType = 'voc10'
+            configId = '70140280'
             break
         case 'PF.weitwinkel':
-            deviceType = 'voc5'
+            configId = '70160196'
             break
         case 'LZ.standard':
-            deviceType = 'lcamf'
+            configId = '50147807'
             break
         case 'LZ.weitwinkel':
-            deviceType = 'lcamw'
+            configId = '50149229'
             break
     }
     
@@ -279,7 +294,7 @@ const printLabel = async (id, brand, lensType) => {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ deviceType, data: labelData, description: `${deviceType}#${id}` }),
+            body: JSON.stringify({ configId, data: labelData, description: `${configId}#${id}` }),
         })
 
     } catch (err) {
@@ -653,10 +668,10 @@ const Test = {
 const testSuite = [
     { groupNo: 3, groupTag: 'hardware', itemNo: 1, listIndex: 6, test: Test.powerLED },
     { groupNo: 3, groupTag: 'hardware', itemNo: 6, listIndex: 11, test: Test.heater },
-    { groupNo: 2, groupTag: 'focus', itemNo: 1, listIndex: 3, test: Test.autofocus, skipOffline: true },
     { groupNo: 1, groupTag: 'backend', itemNo: 1, listIndex: 0, test: Test.bisToken, skipOffline: true },
     { groupNo: 1, groupTag: 'backend', itemNo: 2, listIndex: 1, test: Test.backend, skipOffline: true },
     { groupNo: 1, groupTag: 'backend', itemNo: 3, listIndex: 2, test: Test.statusLED },
+    { groupNo: 2, groupTag: 'focus', itemNo: 1, listIndex: 3, test: Test.autofocus, skipOffline: true },
     { groupNo: 2, groupTag: 'focus', itemNo: 2, listIndex: 4, test: Test.focus },
     { groupNo: 2, groupTag: 'focus', itemNo: 3, listIndex: 5, test: Test.snapshot },
     { groupNo: 3, groupTag: 'hardware', itemNo: 2, listIndex: 7, test: Test.digitalInputLED },

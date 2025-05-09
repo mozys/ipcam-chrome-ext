@@ -1,3 +1,14 @@
+## [3.3] - 2025-05-09
+
+### Added
+- Add pre action to digitial input test
+
+### Changed
+- Reorder tests 
+
+### Fixed
+- Fix label printing
+
 ## [3.2] - 2024-07-04
 ### Changed
 - Fix options validations

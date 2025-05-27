@@ -289,7 +289,7 @@ const printLabel = async (id, brand, lensType) => {
     }
 
     try {
-        await fetch(`${labelPrintServiceBaseURL}/api/labels/print`, {
+        await fetch(`${labelPrintServiceBaseURL}/api/labels?print=true`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
